@@ -1,0 +1,2 @@
+C:\Users\imr84\OneDrive\Desktop\csci420\assign1_coreOpenGL_starterCode (2)\assign1_coreOpenGL_starterCode\hw1-starterCode\Bin\Debug\hw1.exe
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\Bin\Debug\hw1.exe

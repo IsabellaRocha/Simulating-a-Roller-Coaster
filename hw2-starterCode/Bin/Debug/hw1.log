@@ -1,0 +1,282 @@
+﻿  hw1.cpp
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(128,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(128,24): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(127,81): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(127,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(127,34): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(219,36): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(220,36): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(223,36): warning C4305: '-=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(224,36): warning C4305: '-=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(264,27): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(267,27): warning C4305: '-=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(270,27): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(273,27): warning C4305: '-=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(276,27): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(277,27): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(280,27): warning C4305: '-=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(281,27): warning C4305: '-=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(505,52): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(514,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(515,27): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(529,55): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(530,57): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(531,56): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(541,58): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(542,60): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(543,59): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(555,62): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(556,64): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(557,63): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(571,58): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(572,60): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(573,59): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(585,62): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(586,64): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(587,63): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(665,50): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(666,52): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(667,51): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(681,67): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(682,69): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(683,68): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(690,64): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(691,66): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(692,65): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(707,67): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(708,69): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(709,68): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(716,66): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(717,68): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(718,67): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(730,50): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(731,52): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(732,51): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(755,55): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(756,57): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(757,56): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(820,60): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(821,62): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(822,52): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(884,57): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(885,59): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(886,58): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(950,53): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(951,55): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(952,54): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(1016,60): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(1017,62): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(1018,61): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(1079,57): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(1080,59): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(1081,58): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+  jpeg.lib(jerror.obj) : MSIL .netmodule or module compiled with /GL found; restarting link with /LTCG; add /LTCG to the link command line to improve linker performance
+LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  Generating code
+  Finished generating code
+  hw1.vcxproj -> C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\Bin\Debug\hw1.exe
