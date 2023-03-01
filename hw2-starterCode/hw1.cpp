@@ -15,6 +15,7 @@
 #include <iostream>
 #include <cstring>
 #include <vector>
+#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,8 +44,6 @@ int rightMouseButton = 0; // 1 if pressed, 0 if not
 
 typedef enum { ROTATE, TRANSLATE, SCALE } CONTROL_STATE;
 CONTROL_STATE controlState = ROTATE;
-typedef enum { POINTSMODE, LINESMODE, TRIANGLESMODE, SMOOTHINGMODE, LINESANDTRIANGLESMODE } DISPLAY_MODE;
-DISPLAY_MODE displayMode = POINTSMODE;
 
 //For animation
 bool playAnimation = false;
@@ -64,17 +63,47 @@ int windowHeight = 720;
 char windowTitle[512] = "CSCI 420 homework I";
 
 // Stores the image loaded from disk.
-ImageIO * heightmapImage;
+//ImageIO * heightmapImage;
 
-// VBO and VAO handles.
-//LinesAndTriangles only hold line coordinates, just all the colors are set to black so it can be seen on top of the object
-GLuint pointsVAO, linesVAO, trianglesVAO, smoothingVAO, linesAndTrianglesVAO;
-GLuint pointsVBO, linesVBO, trianglesVBO, upVBO, downVBO, leftVBO, rightVBO, centerVBO, linesAndTrianglesVBO;
+//START OF HW2 CODE
+// represents one control point along the spline 
+struct Point
+{
+    double x;
+    double y;
+    double z;
+};
 
-vector<float> pointsCoordinates, pointsColors;
-vector<float> linesCoordinates, linesColors, linesAndTrianglesColors;
-vector<float> trianglesCoordinates, trianglesColors;
-vector<float> upCoors, downCoors, leftCoors, rightCoors, centerCoors, centerColors;
+// spline struct 
+// contains how many control points the spline has, and an array of control points 
+struct Spline
+{
+    int numControlPoints;
+    Point* points;
+};
+
+// the spline array 
+Spline* splines;
+// total number of splines 
+int numSplines;
+
+GLuint splineVAO;
+GLuint splineVBO;
+
+vector<float> splineCoordinates, splineColors;
+
+const float s = 0.5;
+//4x4 matrix, column major
+const float basisMatrixTranspose[16] = { -s, 2.0 * s, -s, 0.0,
+                                2.0 - s, s - 3.0, 0.0, 1.0,
+                                s - 2.0, 3.0 - 2.0 * s, s, 0.0,
+                                s, -s, 0.0, 0.0 };
+
+const float basisMatrix[16] = { -s, 2.0 - s, s - 2.0, s,
+                                2.0 * s, s - 3.0, 3.0 - 2.0 * s, -s,
+                                -s, 0.0, s, 0.0,
+                                0.0, 1.0, 0.0, 0.0 };
+
 
 // CSCI 420 helper classes.
 OpenGLMatrix matrix;
@@ -84,15 +113,6 @@ int imageHeight = 0;
 int imageWidth = 0;
 //Used for color correcting in smoothing mode to avoid white spikes
 int scaleConstant = 1;
-
-//Used to handle colored images
-struct ColorAndHeight {
-    float height;
-    float red;
-    float green;
-    float blue;
-};
-
 
 // Write a screenshot to the specified filename.
 void saveScreenshot(const char * filename)
@@ -119,15 +139,15 @@ void displayFunc()
   // Set up the camera position, focus point, and the up vector.
   matrix.SetMatrixMode(OpenGLMatrix::ModelView);
   matrix.LoadIdentity();
-  /*matrix.LookAt(0.0, 0.0, 5.0,
+  matrix.LookAt(0.5, 5.0, 0.5,
                 0.0, 0.0, 0.0, 
                 0.0, 1.0, 0.0);
-*/
 
+  /*
   matrix.LookAt(1.0 * imageWidth / 2, 1.0 * imageWidth / 1.25, 1.0 * imageWidth / 5,
       1.0 * imageWidth / 2, 0.0, -1.0 * imageWidth / 2,
       0.0, 1.0, 0.0);
-      
+     */ 
   // In here, you can do additional modeling on the object, such as performing translations, rotations and scales.
   // ...
 
@@ -163,41 +183,11 @@ void displayFunc()
   // Execute the rendering.
   //glBindVertexArray(triangleVAO); // Bind the VAO that we want to render.
   //glDrawArrays(GL_TRIANGLES, 0, numVertices); // Render the VAO, by rendering "numVertices", starting from vertex 0.
-  switch (displayMode) {
-    case POINTSMODE:
-        glBindVertexArray(pointsVAO);
-        glDrawArrays(GL_POINTS, 0, pointsCoordinates.size() / 3);
-        glBindVertexArray(0);
-        break;
-    case LINESMODE:
-        glBindVertexArray(linesVAO);
-        glDrawArrays(GL_LINES, 0, linesCoordinates.size() / 3);
-        glBindVertexArray(0);
-        break;
-    case TRIANGLESMODE:
-        glBindVertexArray(trianglesVAO);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, trianglesCoordinates.size() / 3);
-        glBindVertexArray(0);
-        break;
-    case SMOOTHINGMODE:
-        glBindVertexArray(smoothingVAO);
-        glDrawArrays(GL_TRIANGLES, 0, centerCoors.size() / 3);
-        glBindVertexArray(0);
-        break;
-    case LINESANDTRIANGLESMODE:
-        //Polygon offset is needed so the lines appear slightly above the triangles, otherwise they're constantly intersecting each other
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(1.0f, 1.0f);
-
-        glBindVertexArray(trianglesVAO);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, trianglesCoordinates.size() / 3);
-        glDisable(GL_POLYGON_OFFSET_FILL);
-
-        glBindVertexArray(linesAndTrianglesVAO);
-        glDrawArrays(GL_LINES, 0, linesCoordinates.size() / 3);
-        glBindVertexArray(0);
-        break;
-  }
+  
+  glBindVertexArray(splineVAO);
+  glDrawArrays(GL_LINES, 0, splineCoordinates.size() / 3);
+  glBindVertexArray(0);
+ 
   // Swap the double-buffers.
   glutSwapBuffers();
 }
@@ -210,105 +200,7 @@ void idleFunc()
 
 	// Send the signal that we should call displayFunc.
 
-	if (playAnimation) {
-		GLint mode = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "mode"); //Use to change between first mode for 1, 2, 3, and second mode for 4
-		GLint constant = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "constant");
-
-        //Rotate while going through modes
-        if (numScreenshots < 100) {
-            terrainRotate[1] += 0.3;
-            terrainRotate[0] += 0.2;
-        }
-        else if (numScreenshots < 200) {
-            terrainRotate[1] -= 0.3;
-            terrainRotate[0] -= 0.2;
-
-        }
-
-        //40 screenshots per mode, last 100 show scaling and translating
-		if (numScreenshots < 200) {
-			if (numScreenshots < 40) {
-				displayMode = POINTSMODE;
-				glUniform1i(mode, 0);
-			}
-			else if (numScreenshots < 80) {
-				displayMode = LINESMODE;
-				glUniform1i(mode, 0);
-			}
-			else if (numScreenshots < 120) {
-				displayMode = TRIANGLESMODE;
-				glUniform1i(mode, 0);
-			}
-			else if (numScreenshots < 160) {
-				displayMode = SMOOTHINGMODE;
-				glUniform1i(mode, 1);
-				glUniform1i(constant, scaleConstant);
-			}
-			else if (numScreenshots < 200) {
-				displayMode = LINESANDTRIANGLESMODE;
-				glUniform1i(mode, 0);
-			}
-		}
-		else if (numScreenshots < 300) {
-			displayMode = TRIANGLESMODE;
-			glUniform1i(mode, 0);
-			if (numScreenshots < 212) {
-				terrainTranslate[0] += 3.0;
-				terrainTranslate[1] += 3.0;
-			}
-			else if (numScreenshots < 224) {
-				terrainTranslate[0] -= 3.0;
-				terrainTranslate[1] -= 3.0;
-			}
-			else if (numScreenshots < 236) {
-				terrainScale[0] += 0.1;
-			}
-			else if (numScreenshots < 248) {
-				terrainScale[0] -= 0.1;
-			}
-			else if (numScreenshots < 260) {
-				terrainScale[1] += 0.1;
-			}
-			else if (numScreenshots < 272) {
-				terrainScale[1] -= 0.1;
-			}
-			else if (numScreenshots < 286) {
-				terrainScale[0] += 0.1;
-				terrainScale[1] += 0.1;
-			}
-			else if (numScreenshots < 300) {
-				terrainScale[0] -= 0.1;
-				terrainScale[1] -= 0.1;
-			}
-		}
-
-		if (numScreenshots < 300) {
-			char filename[8] = "";
-			if (numScreenshots < 10) {
-				strcat(filename, "00");
-				strcat(filename, to_string(numScreenshots).c_str());
-				strcat(filename, ".jpg");
-			}
-			else if (numScreenshots < 100) {
-				strcat(filename, "0");
-				strcat(filename, to_string(numScreenshots).c_str());
-                strcat(filename, ".jpg");
-            }
-            else {
-                strcat(filename, to_string(numScreenshots).c_str());
-                strcat(filename, ".jpg");
-            }
-            saveScreenshot(filename);
-            numScreenshots++;
-        }
-	}
-
 	
-	if (numScreenshots >= 300) {
-		playAnimation = false;
-		numScreenshots = 0;
-	}
-
 	glutPostRedisplay();
 }
 
@@ -456,932 +348,14 @@ void keyboardFunc(unsigned char key, int x, int y)
       saveScreenshot("screenshot.jpg");
     break;
 
-    case '1':
-        displayMode = POINTSMODE;   
-        glUniform1i(mode, 0);
-        break;
-    case '2':
-        displayMode = LINESMODE;
-        glUniform1i(mode, 0);
-        break;
-    case '3':
-        displayMode = TRIANGLESMODE;
-        glUniform1i(mode, 0);
-        break;
-    case '4':
-        displayMode = SMOOTHINGMODE;
-        glUniform1i(mode, 1);
-        glUniform1i(constant, scaleConstant);
-        break;
-    case '5':
-        displayMode = LINESANDTRIANGLESMODE;
-        glUniform1i(mode, 0);
-        break;
-    
     case 'a':
         playAnimation = true;
         break;
   }
 }
 
-//Use formula Grayscale = 0.299R + 0.587G + 0.114B from https://www.dynamsoft.com/blog/insights/image-processing/image-processing-101-color-space-conversion/
-ColorAndHeight getHeightFromColor(int i, int j, bool blackAndWhiteImage) {
-    ColorAndHeight pixel;
-    if (blackAndWhiteImage) {
-        float heightOfVertex = heightmapImage->getPixel(i, j, 0);
-        pixel.height = heightOfVertex;
-        pixel.red = heightOfVertex;
-        pixel.green = heightOfVertex;
-        pixel.blue = heightOfVertex;
-    }
-    else {
-        float red = heightmapImage->getPixel(i, j, 0);
-        float green = heightmapImage->getPixel(i, j, 1);
-        float blue = heightmapImage->getPixel(i, j, 2);
 
-        pixel.red = red;
-        pixel.green = green;
-        pixel.blue = blue;
-        pixel.height = 0.299 * red + 0.587 * green + 0.114 * blue;
-    }
-    return pixel;
-}
 
-void getHeightsFromImage() {
-    imageHeight = heightmapImage->getHeight();
-    imageWidth = heightmapImage->getWidth();
-    
-    float scale = (1.0 * imageWidth / 128) * 0.1;
-    scaleConstant = scale * 300;
-
-    bool blackAndWhiteImage = heightmapImage->getBytesPerPixel() == 1;
-    
-    for (int i = 0; i < imageWidth; i++) {
-        for (int j = 0; j < imageHeight; j++) {
-            ColorAndHeight heightOfVertex = getHeightFromColor(i, j, blackAndWhiteImage);
-
-            //Load x, y, z coordinates of that float into point vector (will be used in VBO)
-            pointsCoordinates.push_back((float) i);
-            pointsCoordinates.push_back(heightOfVertex.height * scale);
-            pointsCoordinates.push_back((float) -j);
-
-            //Load r, g, b, and alpha
-            pointsColors.push_back(heightOfVertex.red / 255.0);
-            pointsColors.push_back(heightOfVertex.green / 255.0);
-            pointsColors.push_back(heightOfVertex.blue / 255.0);
-            pointsColors.push_back(1.0);
-
-            //Make sure you're not looking at point off the image/out of bounds check
-            if (j < imageHeight - 1) {
-                ColorAndHeight heightOfNextVertex = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-                linesCoordinates.push_back((float)i);
-                linesCoordinates.push_back(heightOfVertex.height * scale);
-                linesCoordinates.push_back((float)-j);
-                //Load r, g, b, and alpha
-                linesColors.push_back(heightOfVertex.red / 255.0);
-                linesColors.push_back(heightOfVertex.green / 255.0);
-                linesColors.push_back(heightOfVertex.blue / 255.0);
-                linesColors.push_back(1.0);
-
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(1.0);
-
-                linesCoordinates.push_back((float)i);
-                linesCoordinates.push_back(heightOfNextVertex.height * scale);
-                linesCoordinates.push_back((float)-(j + 1));
-                //Load r, g, b, and alpha
-                linesColors.push_back(heightOfNextVertex.red / 255.0);
-                linesColors.push_back(heightOfNextVertex.green / 255.0);
-                linesColors.push_back(heightOfNextVertex.blue / 255.0);
-                linesColors.push_back(1.0);
-
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(1.0);
-            }
-            if (i < imageWidth - 1) {
-                ColorAndHeight heightOfNextVertex = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-                linesCoordinates.push_back((float)i);
-                linesCoordinates.push_back(heightOfVertex.height * scale);
-                linesCoordinates.push_back((float)-j);
-                //Load r, g, b, and alpha
-                linesColors.push_back(heightOfVertex.red / 255.0);
-                linesColors.push_back(heightOfVertex.green / 255.0);
-                linesColors.push_back(heightOfVertex.blue / 255.0);
-                linesColors.push_back(1.0);
-
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(1.0);
-
-                linesCoordinates.push_back((float)(i + 1));
-                linesCoordinates.push_back(heightOfNextVertex.height * scale);
-                linesCoordinates.push_back((float)-j);
-                //Load r, g, b, and alpha
-                linesColors.push_back(heightOfNextVertex.red / 255.0);
-                linesColors.push_back(heightOfNextVertex.green / 255.0);
-                linesColors.push_back(heightOfNextVertex.blue / 255.0);
-                linesColors.push_back(1.0);
-
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(0);
-                linesAndTrianglesColors.push_back(1.0);
-            }
-            /* Old way when using GL_TRIANGLES, right below this comment is new code for GL_TRIANGLE_STRIP
-            if (i < imageWidth - 1 && j < imageHeight - 1) {
-                float heightOfRightVertex = heightmapImage->getPixel(i + 1, j, 0);
-                float heightOfUpVertex = heightmapImage->getPixel(i, j + 1, 0);
-                float heightOfUpRightVertex = heightmapImage->getPixel(i + 1, j + 1, 0);
-
-                //Creates bottom left triangle
-                trianglesCoordinates.push_back((float)i);
-                trianglesCoordinates.push_back(heightOfVertex * scale);
-                trianglesCoordinates.push_back((float)-j);
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfVertex / 255.0);
-                trianglesColors.push_back(heightOfVertex / 255.0);
-                trianglesColors.push_back(heightOfVertex / 255.0);
-                trianglesColors.push_back(1.0);
-
-                trianglesCoordinates.push_back((float)i + 1);
-                trianglesCoordinates.push_back(heightOfRightVertex * scale);
-                trianglesCoordinates.push_back((float)-j);
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfRightVertex / 255.0);
-                trianglesColors.push_back(heightOfRightVertex / 255.0);
-                trianglesColors.push_back(heightOfRightVertex / 255.0);
-                trianglesColors.push_back(1.0);
-
-                trianglesCoordinates.push_back((float)i);
-                trianglesCoordinates.push_back(heightOfUpVertex * scale);
-                trianglesCoordinates.push_back((float)-(j + 1));
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfUpVertex / 255.0);
-                trianglesColors.push_back(heightOfUpVertex / 255.0);
-                trianglesColors.push_back(heightOfUpVertex / 255.0);
-                trianglesColors.push_back(1.0);
-
-                //Creates top right triangle
-                trianglesCoordinates.push_back((float)(i + 1));
-                trianglesCoordinates.push_back(heightOfUpRightVertex * scale);
-                trianglesCoordinates.push_back((float)-(j + 1));
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfUpRightVertex / 255.0);
-                trianglesColors.push_back(heightOfUpRightVertex / 255.0);
-                trianglesColors.push_back(heightOfUpRightVertex / 255.0);
-                trianglesColors.push_back(1.0);
-
-                trianglesCoordinates.push_back((float)i + 1);
-                trianglesCoordinates.push_back(heightOfRightVertex * scale);
-                trianglesCoordinates.push_back((float)-j);
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfRightVertex / 255.0);
-                trianglesColors.push_back(heightOfRightVertex / 255.0);
-                trianglesColors.push_back(heightOfRightVertex / 255.0);
-                trianglesColors.push_back(1.0);
-
-                trianglesCoordinates.push_back((float)i);
-                trianglesCoordinates.push_back(heightOfUpVertex * scale);
-                trianglesCoordinates.push_back((float)-(j + 1));
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfUpVertex / 255.0);
-                trianglesColors.push_back(heightOfUpVertex / 255.0);
-                trianglesColors.push_back(heightOfUpVertex / 255.0);
-                trianglesColors.push_back(1.0);
-            } */
-		}
-    }
-    //Add starting vertex
-    ColorAndHeight heightOfVertex = getHeightFromColor(0, 0, blackAndWhiteImage);
-    trianglesCoordinates.push_back((float)0);
-    trianglesCoordinates.push_back(heightOfVertex.height * scale);
-    trianglesCoordinates.push_back((float)0);
-    //Load r, g, b, and alpha
-    trianglesColors.push_back(heightOfVertex.red / 255.0);
-    trianglesColors.push_back(heightOfVertex.green / 255.0);
-    trianglesColors.push_back(heightOfVertex.blue / 255.0);
-    trianglesColors.push_back(1.0);
-    //Use a snaking pattern to avoid triangles spanning across the whole image
-    for (int i = 0; i < imageWidth - 1; i++) {
-        if (i % 2 == 0) {
-            for (int j = 0; j < imageHeight - 1; j++) {
-                heightOfVertex = getHeightFromColor(i, j, blackAndWhiteImage);
-                ColorAndHeight heightOfRightVertex = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-                ColorAndHeight heightOfUpVertex = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-
-                trianglesCoordinates.push_back((float)i + 1);
-                trianglesCoordinates.push_back(heightOfRightVertex.height * scale);
-                trianglesCoordinates.push_back((float)-j);
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfRightVertex.red / 255.0);
-                trianglesColors.push_back(heightOfRightVertex.green / 255.0);
-                trianglesColors.push_back(heightOfRightVertex.blue / 255.0);
-                trianglesColors.push_back(1.0);
-
-                trianglesCoordinates.push_back((float)i);
-                trianglesCoordinates.push_back(heightOfUpVertex.height * scale);
-                trianglesCoordinates.push_back((float)-(j + 1));
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfUpVertex.red / 255.0);
-                trianglesColors.push_back(heightOfUpVertex.green / 255.0);
-                trianglesColors.push_back(heightOfUpVertex.blue / 255.0);
-                trianglesColors.push_back(1.0);
-
-            }
-        }
-        else {
-            for (int j = imageHeight - 1; j > 0; j--) {
-                heightOfVertex = getHeightFromColor(i, j, blackAndWhiteImage);
-                ColorAndHeight heightOfRightVertex = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-                ColorAndHeight heightOfDownVertex = getHeightFromColor(i, j - 1, blackAndWhiteImage);
-
-                trianglesCoordinates.push_back((float)i + 1);
-                trianglesCoordinates.push_back(heightOfRightVertex.height * scale);
-                trianglesCoordinates.push_back((float)-j);
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfRightVertex.red / 255.0);
-                trianglesColors.push_back(heightOfRightVertex.green / 255.0);
-                trianglesColors.push_back(heightOfRightVertex.blue / 255.0);
-                trianglesColors.push_back(1.0);
-
-                trianglesCoordinates.push_back((float)i);
-                trianglesCoordinates.push_back(heightOfDownVertex.height * scale);
-                trianglesCoordinates.push_back((float)-(j - 1));
-                //Load r, g, b, and alpha
-                trianglesColors.push_back(heightOfDownVertex.red / 255.0);
-                trianglesColors.push_back(heightOfDownVertex.green / 255.0);
-                trianglesColors.push_back(heightOfDownVertex.blue / 255.0);
-                trianglesColors.push_back(1.0);
-
-            }
-        }
-    }
-    //Add ending vertex
-    heightOfVertex = getHeightFromColor(imageWidth - 1, imageHeight - 1, blackAndWhiteImage);;
-    trianglesCoordinates.push_back((float)(imageWidth - 1));
-    trianglesCoordinates.push_back(heightOfVertex.height * scale);
-    trianglesCoordinates.push_back((float)-(imageHeight - 1));
-    //Load r, g, b, and alpha
-    trianglesColors.push_back(heightOfVertex.red / 255.0);
-    trianglesColors.push_back(heightOfVertex.green / 255.0);
-    trianglesColors.push_back(heightOfVertex.blue / 255.0);
-    trianglesColors.push_back(1.0);
-
-
-
-    for (int i = 0; i < imageWidth - 1; i++) {
-        for (int j = 0; j < imageHeight - 1; j++) {
-            heightOfVertex = getHeightFromColor(i, j, blackAndWhiteImage);
-            ColorAndHeight heightOfRightVertex = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-            ColorAndHeight heightOfUpVertex = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-            ColorAndHeight heightOfUpRightVertex = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-
-            //Variables used when adding to up, left, right, and down vectors for smoothing
-            ColorAndHeight heightOfRight;
-            ColorAndHeight heightOfLeft;
-            ColorAndHeight heightOfUp;
-            ColorAndHeight heightOfDown;
-
-            //Adding current coordinate
-            centerCoors.push_back((float)i);
-            centerCoors.push_back(heightOfVertex.height * scale);
-            centerCoors.push_back((float)-j);
-
-            centerColors.push_back(heightOfVertex.red / 255.0);
-            centerColors.push_back(heightOfVertex.green / 255.0);
-            centerColors.push_back(heightOfVertex.blue / 255.0);
-            centerColors.push_back(0);
-
-            //If all the way on left
-            if (i == 0) {
-                heightOfRight = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i + 1, j, blackAndWhiteImage);;
-
-                rightCoors.push_back((float)(i + 1));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-j);
-
-                leftCoors.push_back((float)(i + 1));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-j);
-
-            }
-            else {
-                heightOfRight = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i - 1, j, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i + 1));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-j);
-
-                leftCoors.push_back((float)(i - 1));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-j);
-
-            }
-            //If all the way at the bottom
-            if (j == 0) {
-                heightOfUp = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-
-                upCoors.push_back((float)i);
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 1));
-
-                downCoors.push_back((float)i);
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j + 1));
-
-            }
-            else {
-                heightOfUp = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i, j - 1, blackAndWhiteImage);
-
-                upCoors.push_back((float)i);
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 1));
-
-                downCoors.push_back((float)i);
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j - 1));
-
-            }
-
-            //Adding right coordinate
-            centerCoors.push_back((float)(i + 1));
-            centerCoors.push_back(heightOfRightVertex.height * scale);
-            centerCoors.push_back((float)-j);
-
-            centerColors.push_back(heightOfRightVertex.red / 255.0);
-            centerColors.push_back(heightOfRightVertex.green / 255.0);
-			centerColors.push_back(heightOfRightVertex.blue / 255.0);
-			centerColors.push_back(0);
-
-            //If all the way to the right
-            if ((i + 1) == imageWidth - 1) {
-                heightOfLeft = getHeightFromColor(i, j, blackAndWhiteImage);
-                heightOfRight = getHeightFromColor(i, j, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-j);
-
-                leftCoors.push_back((float)(i));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-j);
-            }
-            else {
-                heightOfRight = getHeightFromColor(i + 2, j, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i, j, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i + 2));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-j);
-
-                leftCoors.push_back((float)(i));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-j);
-            }
-            
-            //If all the way at bottom
-            if (j == 0) {
-                heightOfUp = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-
-                upCoors.push_back((float)(i + 1));
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 1));
-
-                downCoors.push_back((float)(i + 1));
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j + 1));
-
-            }
-            else {
-                heightOfUp = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i + 1, j - 1, blackAndWhiteImage);
-
-                upCoors.push_back((float)(i + 1));
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 1));
-
-                downCoors.push_back((float)(i + 1));
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j - 1));
-
-            }
-
-            //Adding up coordinate
-            centerCoors.push_back((float)i);
-            centerCoors.push_back(heightOfUpVertex.height * scale);
-            centerCoors.push_back((float)-(j + 1));
-
-            centerColors.push_back(heightOfUpVertex.red / 255.0);
-            centerColors.push_back(heightOfUpVertex.green / 255.0);
-            centerColors.push_back(heightOfUpVertex.blue / 255.0);
-            centerColors.push_back(0);
-
-            //If all the way on the left
-            if (i == 0) {
-                heightOfRight = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i + 1));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-(j + 1));
-
-                leftCoors.push_back((float)(i + 1));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-(j + 1));
-
-            }
-            else {
-                heightOfRight = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i - 1, j + 1, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i + 1));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-(j + 1));
-
-                leftCoors.push_back((float)(i - 1));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-(j + 1));
-
-			}
-
-            //If all the way at the top
-            if (j + 1 == imageHeight - 1) {
-                heightOfDown = getHeightFromColor(i, j, blackAndWhiteImage);
-                heightOfUp = getHeightFromColor(i, j, blackAndWhiteImage);
-
-                upCoors.push_back((float)i);
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j));
-
-                downCoors.push_back((float)i);
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j));
-
-            }
-            else {
-                heightOfUp = getHeightFromColor(i, j + 2, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i, j, blackAndWhiteImage);
-
-                upCoors.push_back((float)i);
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 2));
-
-                downCoors.push_back((float)i);
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j));
-
-            }
-			
-            //Adding upper right coordinate
-			centerCoors.push_back((float)(i + 1));
-			centerCoors.push_back(heightOfUpRightVertex.height * scale);
-			centerCoors.push_back((float)-(j + 1));
-
-			centerColors.push_back(heightOfUpRightVertex.red / 255.0);
-			centerColors.push_back(heightOfUpRightVertex.green / 255.0);
-			centerColors.push_back(heightOfUpRightVertex.blue / 255.0);
-			centerColors.push_back(0);
-
-            //If all the way to the right
-            if ((i + 1) == imageWidth - 1) {
-                heightOfLeft = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-                heightOfRight = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-(j + 1));
-
-                leftCoors.push_back((float)(i));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-(j + 1));
-            }
-            else {
-                heightOfRight = getHeightFromColor(i + 2, j + 1, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i, j + 1, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i + 2));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-(j + 1));
-
-                leftCoors.push_back((float)(i));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-(j + 1));
-
-            }
-
-            //If all the way at the top
-            if (j + 1 == imageHeight - 1) {
-                heightOfDown = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-                heightOfUp = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-
-                upCoors.push_back((float)(i + 1));
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j));
-
-                downCoors.push_back((float)(i + 1));
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j));
-
-            }
-            else {
-                heightOfUp = getHeightFromColor(i + 1, j + 2, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i + 1, j, blackAndWhiteImage);
-
-                upCoors.push_back((float)(i + 1));
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 2));
-
-                downCoors.push_back((float)(i + 1));
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j));
-
-            }
-
-			
-            //Adding right coordinate
-			centerCoors.push_back((float)(i + 1));
-			centerCoors.push_back(heightOfRightVertex.height * scale);
-			centerCoors.push_back((float)-j);
-
-            centerColors.push_back(heightOfRightVertex.red / 255.0);
-            centerColors.push_back(heightOfRightVertex.green / 255.0);
-            centerColors.push_back(heightOfRightVertex.blue / 255.0);
-            centerColors.push_back(0);
-
-            //If all the way to the right
-            if ((i + 1) == imageWidth - 1) {
-                heightOfLeft = getHeightFromColor(i, j, blackAndWhiteImage);
-                heightOfRight = getHeightFromColor(i, j, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-j);
-
-                leftCoors.push_back((float)(i));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-j);
-            }
-            else {
-                heightOfRight = getHeightFromColor(i + 2, j, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i, j, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i + 2));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-j);
-
-                leftCoors.push_back((float)(i));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-j);
-            }
-            //If all the way on bottom
-            if (j == 0) {
-                heightOfUp = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-
-                upCoors.push_back((float)(i + 1));
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 1));
-
-                downCoors.push_back((float)(i + 1));
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j + 1));
-
-            }
-            else {
-                heightOfUp = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i + 1, j - 1, blackAndWhiteImage);
-
-                upCoors.push_back((float)(i + 1));
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 1));
-
-                downCoors.push_back((float)(i + 1));
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j - 1));
-
-            }
-
-            //Adding upper coordinate
-            centerCoors.push_back((float)i);
-            centerCoors.push_back(heightOfUpVertex.height * scale);
-            centerCoors.push_back((float)-(j + 1));
-
-            centerColors.push_back(heightOfUpVertex.red / 255.0);
-            centerColors.push_back(heightOfUpVertex.green / 255.0);
-            centerColors.push_back(heightOfUpVertex.blue / 255.0);
-            centerColors.push_back(0);
-
-            //If all the way on the left
-            if (i == 0) {
-                heightOfRight = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i + 1));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-(j + 1));
-
-                leftCoors.push_back((float)(i + 1));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-(j + 1));
-
-            }
-            else {
-                heightOfRight = getHeightFromColor(i + 1, j + 1, blackAndWhiteImage);
-                heightOfLeft = getHeightFromColor(i - 1, j + 1, blackAndWhiteImage);
-
-                rightCoors.push_back((float)(i + 1));
-                rightCoors.push_back(heightOfRight.height * scale);
-                rightCoors.push_back((float)-(j + 1));
-
-                leftCoors.push_back((float)(i - 1));
-                leftCoors.push_back(heightOfLeft.height * scale);
-                leftCoors.push_back((float)-(j + 1));
-
-			}
-
-            //If all the way at the top
-            if (j + 1 == imageHeight - 1) {
-                heightOfDown = getHeightFromColor(i, j, blackAndWhiteImage);
-                heightOfUp = getHeightFromColor(i, j, blackAndWhiteImage);
-
-                upCoors.push_back((float)i);
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j));
-
-                downCoors.push_back((float)i);
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j));
-            }
-            else {
-                heightOfUp = getHeightFromColor(i, j + 2, blackAndWhiteImage);
-                heightOfDown = getHeightFromColor(i, j, blackAndWhiteImage);
-
-                upCoors.push_back((float)i);
-                upCoors.push_back(heightOfUp.height * scale);
-                upCoors.push_back((float)-(j + 2));
-
-                downCoors.push_back((float)i);
-                downCoors.push_back(heightOfDown.height * scale);
-                downCoors.push_back((float)-(j));
-
-            }
-        }
-    }
-}
-
-void initScene(int argc, char *argv[])
-{
-  // Load the image from a jpeg disk file into main memory.
-  heightmapImage = new ImageIO();
-  if (heightmapImage->loadJPEG(argv[1]) != ImageIO::OK)
-  {
-    cout << "Error reading image " << argv[1] << "." << endl;
-    exit(EXIT_FAILURE);
-  }
-  
-
-  // Set the background color.
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black color.
-  getHeightsFromImage();
-  
-  // Enable z-buffering (i.e., hidden surface removal using the z-buffer algorithm).
-  glEnable(GL_DEPTH_TEST);
-
-  // Create and bind the pipeline program. This operation must be performed BEFORE we initialize any VAOs.
-  pipelineProgram = new BasicPipelineProgram;
-  int ret = pipelineProgram->Init(shaderBasePath);
-  if (ret != 0) 
-  { 
-    abort();
-  }
-  pipelineProgram->Bind();
-
-
-  const GLuint locationOfPosition = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "position"); // Obtain a handle to the shader variable "position".
-
-  const int stride = 0; // Stride is 0, i.e., data is tightly packed in the VBO.
-  const GLboolean normalized = GL_FALSE; // Normalization is off.
-  const GLuint locationOfColor = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "color"); // Obtain a handle to the shader variable "color".
-
-  //GLuints for smoothing
-
-  const GLuint locationOfUpPosition = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "upCoors");
-  const GLuint locationOfDownPosition = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "downCoors");
-  const GLuint locationOfLeftPosition = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "leftCoors");
-  const GLuint locationOfRightPosition = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "rightCoors");
-
-
-  //Originally had this in a switch, but it's in the init so switching between things didn't work since the other VAOs and VBOs weren't loaded, must load all of them
-  
-  /*POINT VBOS AND VAOS*/
-  // Create the VBOs. There is a single VBO in this example. This operation must be performed BEFORE we initialize any VAOs.
-  glGenBuffers(1, &pointsVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
-  // First, allocate an empty VBO of the correct size to hold positions and colors.
-  int numBytesPointsCoordinates = sizeof(float) * pointsCoordinates.size();
-  int numBytesPointsColors = sizeof(float) * pointsColors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesPointsCoordinates + numBytesPointsColors, nullptr, GL_STATIC_DRAW);
-  // Next, write the position and color data into the VBO.
-  glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesPointsCoordinates, (float*)pointsCoordinates.data());
-  glBufferSubData(GL_ARRAY_BUFFER, numBytesPointsCoordinates, numBytesPointsColors, (float*)pointsColors.data());
-  // Create the VAOs. There is a single VAO in this example.
-  glGenVertexArrays(1, &pointsVAO);
-  glBindVertexArray(pointsVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
-
-  // Set up the relationship between the "position" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  // Set up the relationship between the "color" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfColor); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesPointsCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels). 
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0); //Unbind in order to do lines next
-
-  /*LINE VBOS AND VAOS*/
-  // Create the VBOs. There is a single VBO in this example. This operation must be performed BEFORE we initialize any VAOs.
-  glGenBuffers(1, &linesVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, linesVBO);
-  // First, allocate an empty VBO of the correct size to hold positions and colors.
-  int numBytesLinesCoordinates = sizeof(float) * linesCoordinates.size();
-  int numBytesLinesColors = sizeof(float) * linesColors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesLinesCoordinates + numBytesLinesColors, nullptr, GL_STATIC_DRAW);
-  // Next, write the position and color data into the VBO.
-  glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesLinesCoordinates, (float*)linesCoordinates.data());
-  glBufferSubData(GL_ARRAY_BUFFER, numBytesLinesCoordinates, numBytesLinesColors, (float*)linesColors.data());
-  // Create the VAOs. There is a single VAO in this example.
-  glGenVertexArrays(1, &linesVAO);
-  glBindVertexArray(linesVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, linesVBO);
-
-  // Set up the relationship between the "position" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  // Set up the relationship between the "color" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfColor); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesLinesCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels). 
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0); //Unbind in order to do triangles next
-
-  /*TRIANGLE VAOS AND VBOS*/
-  // Create the VBOs. There is a single VBO in this example. This operation must be performed BEFORE we initialize any VAOs.
-  glGenBuffers(1, &trianglesVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, trianglesVBO);
-  // First, allocate an empty VBO of the correct size to hold positions and colors.
-  int numBytesTrianglesCoordinates = sizeof(float) * trianglesCoordinates.size();
-  int numBytesTrianglesColors = sizeof(float) * trianglesColors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesTrianglesCoordinates + numBytesTrianglesColors, nullptr, GL_STATIC_DRAW);
-  // Next, write the position and color data into the VBO.
-  glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesTrianglesCoordinates, (float*)trianglesCoordinates.data());
-  glBufferSubData(GL_ARRAY_BUFFER, numBytesTrianglesCoordinates, numBytesTrianglesColors, (float*)trianglesColors.data());
-  // Create the VAOs. There is a single VAO in this example.
-  glGenVertexArrays(1, &trianglesVAO);
-  glBindVertexArray(trianglesVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, trianglesVBO);
-
-  // Set up the relationship between the "position" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  // Set up the relationship between the "color" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfColor); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesTrianglesCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels). 
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  /*SMOOTHING VAOS AND VBOS*/
-  // Create the VBOs. There is 4 VBOs in this example. This operation must be performed BEFORE we initialize any VAOs.
-  glGenBuffers(1, &upVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, upVBO);
-  // First, allocate an empty VBO of the correct size to hold positions.
-  int numBytesUpCoordinates = sizeof(float) * upCoors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesUpCoordinates, (float*)upCoors.data(), GL_STATIC_DRAW);
-  
-  glGenVertexArrays(1, &smoothingVAO);
-  glBindVertexArray(smoothingVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, upVBO);
-
-  // Set up the relationship between the "upCoors" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfUpPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfUpPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  glGenBuffers(1, &downVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, downVBO);
-  // First, allocate an empty VBO of the correct size to hold positions.
-  int numBytesDownCoordinates = sizeof(float) * downCoors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesDownCoordinates, (float*)downCoors.data(), GL_STATIC_DRAW);
-  // Set up the relationship between the "downCoors" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfDownPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfDownPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  glGenBuffers(1, &leftVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, leftVBO);
-  // First, allocate an empty VBO of the correct size to hold positions.
-  int numBytesLeftCoordinates = sizeof(float) * leftCoors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesLeftCoordinates, (float*)leftCoors.data(), GL_STATIC_DRAW);
-  // Set up the relationship between the "upCoors" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfLeftPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfLeftPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  glGenBuffers(1, &rightVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, rightVBO);
-  // First, allocate an empty VBO of the correct size to hold positions.
-  int numBytesRightCoordinates = sizeof(float) * rightCoors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesRightCoordinates, (float*)rightCoors.data(), GL_STATIC_DRAW);
-  // Set up the relationship between the "rightCoors" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfRightPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfRightPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  glGenBuffers(1, &centerVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, centerVBO);
-  // First, allocate an empty VBO of the correct size to hold positions and colors.
-  int numBytesCenterCoordinates = sizeof(float) * centerCoors.size();
-  int numBytesCenterColors = sizeof(float) * centerColors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesCenterCoordinates + numBytesCenterColors, nullptr, GL_STATIC_DRAW);
-  // Next, write the position and color data into the VBO.
-  glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesCenterCoordinates, (float*)centerCoors.data());
-  glBufferSubData(GL_ARRAY_BUFFER, numBytesCenterCoordinates, numBytesCenterColors, (float*)centerColors.data());
-  // Set up the relationship between the "position" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  // Set up the relationship between the "color" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfColor); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesCenterCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels). 
-
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-
-
-  /*LINEANDTRIANGLES VBOS AND VAOS*/
-  // Create the VBOs. There is a single VBO in this example. This operation must be performed BEFORE we initialize any VAOs.
-  glGenBuffers(1, &linesAndTrianglesVBO);
-  glBindBuffer(GL_ARRAY_BUFFER, linesAndTrianglesVBO);
-  // First, allocate an empty VBO of the correct size to hold positions and colors.
-  int numBytesLinesAndTrianglesCoordinates = sizeof(float) * linesCoordinates.size();
-  int numBytesLinesAndTrianglesColors = sizeof(float) * linesAndTrianglesColors.size();
-  glBufferData(GL_ARRAY_BUFFER, numBytesLinesAndTrianglesCoordinates + numBytesLinesAndTrianglesColors, nullptr, GL_STATIC_DRAW);
-  // Next, write the position and color data into the VBO.
-  glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesLinesAndTrianglesCoordinates, (float*)linesCoordinates.data());
-  glBufferSubData(GL_ARRAY_BUFFER, numBytesLinesAndTrianglesCoordinates, numBytesLinesAndTrianglesColors, (float*)linesAndTrianglesColors.data());
-  // Create the VAOs. There is a single VAO in this example.
-  glGenVertexArrays(1, &linesAndTrianglesVAO);
-  glBindVertexArray(linesAndTrianglesVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, linesAndTrianglesVBO);
-
-  // Set up the relationship between the "position" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfPosition); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
-
-  // Set up the relationship between the "color" shader variable and the VAO.
-  glEnableVertexAttribArray(locationOfColor); // Must always enable the vertex attribute. By default, it is disabled.
-  glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesLinesAndTrianglesCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels). 
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0); //Unbind in order to do triangles next
-
-
-  // Check for any OpenGL errors.
-  std::cout << "GL error: " << glGetError() << std::endl;
-}
-
-
-
-
-//START OF HW2 CODE
-// represents one control point along the spline 
-struct Point
-{
-    double x;
-    double y;
-    double z;
-};
-
-// spline struct 
-// contains how many control points the spline has, and an array of control points 
-struct Spline
-{
-    int numControlPoints;
-    Point* points;
-};
-
-// the spline array 
-Spline* splines;
-// total number of splines 
-int numSplines;
 
 int loadSplines(char* argv)
 {
@@ -1431,8 +405,8 @@ int loadSplines(char* argv)
         {
             i++;
         }
-    }
 
+    }
     free(cName);
 
     return 0;
@@ -1515,6 +489,169 @@ int initTexture(const char* imageFilename, GLuint textureHandle)
     return 0;
 }
 
+//Used to multiply u vector by basis matrix
+void multiply1x4by4x4Matrices(float* result, const float* matrix1, const float* matrix2)
+{
+    // Perform the multiplication of matrix1 and matrix2
+    float x = 0, y = 0, z = 0, w = 0;
+    for (int col = 0; col < 4; col++) {
+        float m1 = matrix1[col];
+        x += m1 * matrix2[col * 4 + 0];
+        y += m1 * matrix2[col * 4 + 1];
+        z += m1 * matrix2[col * 4 + 2];
+        w += m1 * matrix2[col * 4 + 3];
+    }
+    result[0] = x;
+    result[1] = y;
+    result[2] = z;
+    result[3] = w;
+}
+
+//Used to multiply result of u vector and basis matrix by control matrix
+void multiply1x4by4x3Matrices(float* result, const float* matrix1, const float* matrix2)
+{
+    float x = 0, y = 0, z = 0;
+    for (int row = 0; row < 4; row++) {
+        float m1 = matrix1[row];
+        x += m1 * matrix2[row * 3 + 0];
+        y += m1 * matrix2[row * 3 + 1];
+        z += m1 * matrix2[row * 3 + 2];
+    }
+    result[0] = x;
+    result[1] = y;
+    result[2] = z;
+}
+
+
+
+void loadVerticesSpline() {
+    
+    for (int i = 0; i < numSplines; i++) {
+        //Control matrix takes four points, hence -3
+        for (int j = 1; j < splines[i].numControlPoints - 2; j++) {
+            //control matrix
+            float controlMatrix[12] = { splines[i].points[j - 1].x, splines[i].points[j - 1].y, splines[i].points[j - 1].z,
+                                        splines[i].points[j].x, splines[i].points[j].y, splines[i].points[j].z, 
+                                        splines[i].points[j + 1].x, splines[i].points[j + 1].y, splines[i].points[j + 1].z, 
+                                        splines[i].points[j + 2].x, splines[i].points[j + 2].y, splines[i].points[j + 2].z };
+            
+            for (float u = 0.0; u < 1.0; u += 0.001) {
+                float initialMatrix[4];
+                float rowVector[4] = { pow(u, 3), pow(u, 2), u, 1 };
+                multiply1x4by4x4Matrices(initialMatrix, rowVector, basisMatrix);
+
+                float result[3];
+                multiply1x4by4x3Matrices(result, initialMatrix, controlMatrix);
+                splineCoordinates.push_back(result[0]);
+                splineCoordinates.push_back(result[1]);
+                splineCoordinates.push_back(result[2]);
+
+                splineColors.push_back(1.0);
+                splineColors.push_back(1.0);
+                splineColors.push_back(1.0);
+                splineColors.push_back(1.0);
+                
+                float uNext = u + 0.001;
+                
+                float initialMatrixNext[4];
+                float rowVectorNext[4] = { pow(uNext, 3), pow(uNext, 2), uNext, 1 };
+                multiply1x4by4x4Matrices(initialMatrixNext, rowVectorNext, basisMatrix);
+
+                float resultNext[3];
+                multiply1x4by4x3Matrices(resultNext, initialMatrixNext, controlMatrix);
+                splineCoordinates.push_back(resultNext[0]);
+                splineCoordinates.push_back(resultNext[1]);
+                splineCoordinates.push_back(resultNext[2]);
+
+                splineColors.push_back(1.0);
+                splineColors.push_back(1.0);
+                splineColors.push_back(1.0);
+                splineColors.push_back(1.0);
+                
+            }
+        }
+    }
+    
+}
+
+
+void initScene(int argc, char *argv[])
+{
+  // Load the image from a jpeg disk file into main memory.
+  /*heightmapImage = new ImageIO();
+  if (heightmapImage->loadJPEG(argv[1]) != ImageIO::OK)
+  {
+    cout << "Error reading image " << argv[1] << "." << endl;
+    exit(EXIT_FAILURE);
+  }
+  */
+  // Set the background color.
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black color.  
+  // Enable z-buffering (i.e., hidden surface removal using the z-buffer algorithm).
+  glEnable(GL_DEPTH_TEST);
+  loadVerticesSpline();
+
+  // Create and bind the pipeline program. This operation must be performed BEFORE we initialize any VAOs.
+  pipelineProgram = new BasicPipelineProgram;
+  int ret = pipelineProgram->Init(shaderBasePath);
+  if (ret != 0) 
+  { 
+    abort();
+  }
+  pipelineProgram->Bind();
+  /*
+  for (int idx = 0; idx < splineColors.size(); idx++) {
+      cout << splineColors[idx] << ", ";
+      if (idx % 4 == 0) {
+          cout << endl;
+      }
+  }
+  */
+
+
+  const GLuint locationOfPosition = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "position"); // Obtain a handle to the shader variable "position".
+
+  const int stride = 0; // Stride is 0, i.e., data is tightly packed in the VBO.
+  const GLboolean normalized = GL_FALSE; // Normalization is off.
+  const GLuint locationOfColor = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "color"); // Obtain a handle to the shader variable "color".
+
+
+  //Originally had this in a switch, but it's in the init so switching between things didn't work since the other VAOs and VBOs weren't loaded, must load all of them
+  
+  /*POINT VBOS AND VAOS*/
+  // Create the VBOs. There is a single VBO in this example. This operation must be performed BEFORE we initialize any VAOs.
+  glGenBuffers(1, &splineVBO);
+  glBindBuffer(GL_ARRAY_BUFFER, splineVBO);
+  // First, allocate an empty VBO of the correct size to hold positions and colors.
+  int numBytesSplineCoordinates = sizeof(float) * splineCoordinates.size();
+  int numBytesSplineColors = sizeof(float) * splineColors.size();
+  glBufferData(GL_ARRAY_BUFFER, numBytesSplineCoordinates + numBytesSplineColors, nullptr, GL_STATIC_DRAW);
+  // Next, write the position and color data into the VBO.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesSplineCoordinates, (float*)splineCoordinates.data());
+  glBufferSubData(GL_ARRAY_BUFFER, numBytesSplineCoordinates, numBytesSplineColors, (float*)splineColors.data());
+  // Create the VAOs. There is a single VAO in this example.
+  glGenVertexArrays(1, &splineVAO);
+  glBindVertexArray(splineVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, splineVBO);
+
+  // Set up the relationship between the "position" shader variable and the VAO.
+  glEnableVertexAttribArray(locationOfPosition); // Must always enable the vertex attribute. By default, it is disabled.
+  glVertexAttribPointer(locationOfPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
+
+  // Set up the relationship between the "color" shader variable and the VAO.
+  glEnableVertexAttribArray(locationOfColor); // Must always enable the vertex attribute. By default, it is disabled.
+  glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesSplineCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels). 
+
+  glBindBuffer(GL_ARRAY_BUFFER, 0); //Unbind in order to do lines next
+
+
+
+  // Check for any OpenGL errors.
+  std::cout << "GL error: " << glGetError() << std::endl;
+}
+
+
+
 int main(int argc, char *argv[])
 {
   if (argc != 2)
@@ -1587,8 +724,6 @@ int main(int argc, char *argv[])
     printf("Loaded %d spline(s).\n", numSplines);
     for (int i = 0; i < numSplines; i++)
         printf("Num control points in spline %d: %d.\n", i, splines[i].numControlPoints);
-
-    return 0;
 
   // Perform the initialization.
   initScene(argc, argv);

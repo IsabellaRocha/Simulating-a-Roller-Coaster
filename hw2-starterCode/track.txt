@@ -1,2 +1,4 @@
-1
+3
+splines/rollerCoaster.sp
+splines/star.sp
 splines/circle.sp
