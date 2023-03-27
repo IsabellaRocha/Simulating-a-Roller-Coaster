@@ -88,11 +88,13 @@ Spline* splines;
 // total number of splines 
 int numSplines;
 
-GLuint splineVAO;
-GLuint splineVBO;
+GLuint splineVAO, railVAO;
+GLuint splineVBO, railVBO;
 
 vector<float> splineColors;
 vector<glm::vec3> splineCoordinates, tangentCoordinates, normals, binormals;
+vector<glm::vec3> railCoordinates;
+vector<glm::vec4> railColors;
 
 const float s = 0.5;
 //4x4 matrix, column major
@@ -189,8 +191,8 @@ void displayFunc()
   //glBindVertexArray(triangleVAO); // Bind the VAO that we want to render.
   //glDrawArrays(GL_TRIANGLES, 0, numVertices); // Render the VAO, by rendering "numVertices", starting from vertex 0.
   
-  glBindVertexArray(splineVAO);
-  glDrawArrays(GL_LINE_STRIP, 0, splineCoordinates.size());
+  glBindVertexArray(railVAO);
+  glDrawArrays(GL_TRIANGLES, 0, railCoordinates.size());
   glBindVertexArray(0);
  
   // Swap the double-buffers.
@@ -597,19 +599,113 @@ void loadNormalsAndBinormals() {
     //Arbitrary vector (typical y up vector) to start
     glm::vec3 V = glm::vec3(0.0, 1.0, 0.0);
     //N0 = unit(T0 x V)
-    glm::vec3 N = glm::normalize(glm::cross(tangentCoordinates[0], V));
+    glm::vec3 N0 = glm::cross(tangentCoordinates[0], V);
+    glm::vec3 N = glm::normalize(N0);
     //B0 = unit(T0 x N0)
-    glm::vec3 B = glm::normalize(glm::cross(tangentCoordinates[0], N));
+    glm::vec3 B0 = glm::cross(tangentCoordinates[0], N);
+    glm::vec3 B = glm::normalize(B0);
     normals.push_back(N);
     binormals.push_back(B);
 
     for (int i = 1; i < tangentCoordinates.size(); i++) {
         //N1 = unit(B0 x T1)
-        N = glm::normalize(glm::cross(binormals[i - 1], tangentCoordinates[i]));
+        N0 = glm::cross(binormals[i - 1], tangentCoordinates[i]);
+        N = glm::normalize(N0);
         //B1 = unit(T1 x N1)
-        B = glm::normalize(glm::cross(tangentCoordinates[i], N));
+        B0 = glm::cross(tangentCoordinates[i], N);
+        B = glm::normalize(B0);
         normals.push_back(N);
         binormals.push_back(B);
+    }
+}
+
+//Makes rail into continuous rectangle not just a line
+void loadRailCoordinates() {
+    for (int i = 0; i < splineCoordinates.size() - 1; i++) {
+        glm::vec3 currCoor = splineCoordinates[i];
+        glm::vec3 currTan = tangentCoordinates[i];
+        glm::vec3 currNormal = normals[i];
+        glm::vec3 currBinormal = binormals[i];
+        float currColorArray[4] = { currNormal.x, currNormal.y, currNormal.z, 1 };
+        glm::vec4 currColor = glm::make_vec4(currColorArray);
+
+        glm::vec3 nextCoor = splineCoordinates[i + 1];
+        glm::vec3 nextTan = tangentCoordinates[i + 1];
+        glm::vec3 nextNormal = normals[i + 1];
+        glm::vec3 nextBinormal = binormals[i + 1];
+        float nextColorArray[4] = { nextNormal.x, nextNormal.y, nextNormal.z, 1 };
+        glm::vec4 nextColor = glm::make_vec4(nextColorArray);
+
+
+        glm::vec3 v0 = currCoor + 0.1f * (-currNormal + currBinormal);
+        glm::vec3 v1 = currCoor + 0.1f * (currNormal + currBinormal);
+        glm::vec3 v2 = currCoor + 0.1f * (currNormal - currBinormal);
+        glm::vec3 v3 = currCoor + 0.1f * (-currNormal - currBinormal);
+
+        glm::vec3 v4 = nextCoor + 0.1f * (-nextNormal + nextBinormal);
+        glm::vec3 v5 = nextCoor + 0.1f * (nextNormal + nextBinormal);
+        glm::vec3 v6 = nextCoor + 0.1f * (nextNormal - nextBinormal);
+        glm::vec3 v7 = nextCoor + 0.1f * (-nextNormal - nextBinormal);
+
+        //First face
+        railCoordinates.push_back(v0);
+        railColors.push_back(currColor);
+        railCoordinates.push_back(v1);
+        railColors.push_back(currColor);
+        railCoordinates.push_back(v2);
+        railColors.push_back(currColor);
+
+        railCoordinates.push_back(v2);
+        railColors.push_back(currColor);
+        railCoordinates.push_back(v3);
+        railColors.push_back(currColor);
+        railCoordinates.push_back(v0);
+        railColors.push_back(currColor);
+
+        //Second face
+        railCoordinates.push_back(v4);
+        railColors.push_back(nextColor);
+        railCoordinates.push_back(v5);
+        railColors.push_back(nextColor);
+        railCoordinates.push_back(v6);
+        railColors.push_back(nextColor);
+
+        railCoordinates.push_back(v6);
+        railColors.push_back(nextColor);
+        railCoordinates.push_back(v7);
+        railColors.push_back(nextColor);
+        railCoordinates.push_back(v4);
+        railColors.push_back(nextColor);
+
+        //Connect faces on left side
+        railCoordinates.push_back(v7);
+        railColors.push_back(nextColor);
+        railCoordinates.push_back(v6);
+        railColors.push_back(nextColor);
+        railCoordinates.push_back(v2);
+        railColors.push_back(currColor);
+
+        railCoordinates.push_back(v2);
+        railColors.push_back(currColor);
+        railCoordinates.push_back(v3);
+        railColors.push_back(currColor);
+        railCoordinates.push_back(v7);
+        railColors.push_back(nextColor);
+
+        //Connect faces on right side
+        railCoordinates.push_back(v4);
+        railColors.push_back(nextColor);
+        railCoordinates.push_back(v5);
+        railColors.push_back(nextColor);
+        railCoordinates.push_back(v1);
+        railColors.push_back(currColor);
+        
+        railCoordinates.push_back(v1);
+        railColors.push_back(currColor);
+        railCoordinates.push_back(v0);
+        railColors.push_back(currColor);
+        railCoordinates.push_back(v4);
+        railColors.push_back(nextColor);
     }
 }
 
@@ -630,6 +726,7 @@ void initScene(int argc, char *argv[])
   glEnable(GL_DEPTH_TEST);
   loadVerticesSpline();
   loadNormalsAndBinormals();
+  loadRailCoordinates();
 
   // Create and bind the pipeline program. This operation must be performed BEFORE we initialize any VAOs.
   pipelineProgram = new BasicPipelineProgram;
@@ -655,10 +752,9 @@ void initScene(int argc, char *argv[])
   const GLboolean normalized = GL_FALSE; // Normalization is off.
   const GLuint locationOfColor = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "color"); // Obtain a handle to the shader variable "color".
 
-
-  //Originally had this in a switch, but it's in the init so switching between things didn't work since the other VAOs and VBOs weren't loaded, must load all of them
   
   /*POINT VBOS AND VAOS*/
+  /*
   // Create the VBOs. There is a single VBO in this example. This operation must be performed BEFORE we initialize any VAOs.
   glGenBuffers(1, &splineVBO);
   glBindBuffer(GL_ARRAY_BUFFER, splineVBO);
@@ -683,6 +779,34 @@ void initScene(int argc, char *argv[])
   glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesSplineCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels). 
 
   glBindBuffer(GL_ARRAY_BUFFER, 0); //Unbind in order to do lines next
+  */
+
+  /*RAIL VBOS AND VAOS*/
+  // Create the VBOs. There is a single VBO in this example. This operation must be performed BEFORE we initialize any VAOs.
+  glGenBuffers(1, &railVBO);
+  glBindBuffer(GL_ARRAY_BUFFER, railVBO);
+  // First, allocate an empty VBO of the correct size to hold positions and colors.
+  int numBytesRailCoordinates = sizeof(glm::vec3) * railCoordinates.size();
+  int numBytesRailColors = sizeof(glm::vec4) * railColors.size();
+  glBufferData(GL_ARRAY_BUFFER, numBytesRailCoordinates + numBytesRailColors, nullptr, GL_STATIC_DRAW);
+  // Next, write the position and color data into the VBO.
+  glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesRailCoordinates, (float*)railCoordinates.data());
+  glBufferSubData(GL_ARRAY_BUFFER, numBytesRailCoordinates, numBytesRailColors, (float*)railColors.data());
+  // Create the VAOs. There is a single VAO in this example.
+  glGenVertexArrays(1, &railVAO);
+  glBindVertexArray(railVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, railVBO);
+
+  // Set up the relationship between the "position" shader variable and the VAO.
+  glEnableVertexAttribArray(locationOfPosition); // Must always enable the vertex attribute. By default, it is disabled.
+  glVertexAttribPointer(locationOfPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates). 
+
+  // Set up the relationship between the "color" shader variable and the VAO.
+  glEnableVertexAttribArray(locationOfColor); // Must always enable the vertex attribute. By default, it is disabled.
+  glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesRailCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels). 
+
+  glBindBuffer(GL_ARRAY_BUFFER, 0); //Unbind in order to do lines next
+
 
 
 
