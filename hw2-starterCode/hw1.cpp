@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #if defined(WIN32) || defined(_WIN32)
   #ifdef _DEBUG
@@ -90,7 +91,8 @@ int numSplines;
 GLuint splineVAO;
 GLuint splineVBO;
 
-vector<float> splineCoordinates, splineColors;
+vector<float> splineColors;
+vector<glm::vec3> splineCoordinates, tangentCoordinates, normals, binormals;
 
 const float s = 0.5;
 //4x4 matrix, column major
@@ -103,6 +105,9 @@ const float basisMatrix[16] = { -s, 2.0 - s, s - 2.0, s,
                                 2.0 * s, s - 3.0, 3.0 - 2.0 * s, -s,
                                 -s, 0.0, s, 0.0,
                                 0.0, 1.0, 0.0, 0.0 };
+
+int camPos = 0;
+bool forwards = false;
 
 
 // CSCI 420 helper classes.
@@ -139,9 +144,9 @@ void displayFunc()
   // Set up the camera position, focus point, and the up vector.
   matrix.SetMatrixMode(OpenGLMatrix::ModelView);
   matrix.LoadIdentity();
-  matrix.LookAt(0.5, 5.0, 0.5,
-                0.0, 0.0, 0.0, 
-                0.0, 1.0, 0.0);
+  matrix.LookAt(splineCoordinates[camPos].x + normals[camPos].x, splineCoordinates[camPos].y + normals[camPos].y, splineCoordinates[camPos].z + normals[camPos].z,
+                splineCoordinates[camPos].x + tangentCoordinates[camPos].x, splineCoordinates[camPos].y + tangentCoordinates[camPos].y, splineCoordinates[camPos].z + tangentCoordinates[camPos].z,
+                normals[camPos].x, normals[camPos].y, normals[camPos].z);
 
   /*
   matrix.LookAt(1.0 * imageWidth / 2, 1.0 * imageWidth / 1.25, 1.0 * imageWidth / 5,
@@ -185,7 +190,7 @@ void displayFunc()
   //glDrawArrays(GL_TRIANGLES, 0, numVertices); // Render the VAO, by rendering "numVertices", starting from vertex 0.
   
   glBindVertexArray(splineVAO);
-  glDrawArrays(GL_LINES, 0, splineCoordinates.size() / 3);
+  glDrawArrays(GL_LINE_STRIP, 0, splineCoordinates.size());
   glBindVertexArray(0);
  
   // Swap the double-buffers.
@@ -194,6 +199,9 @@ void displayFunc()
 
 void idleFunc()
 {
+    if (camPos < splineCoordinates.size() - 1) camPos++;
+    else camPos = 0;
+
 	// Do some stuff... 
 
 	// For example, here, you can save the screenshots to disk (to make the animation).
@@ -542,15 +550,24 @@ void loadVerticesSpline() {
 
                 float result[3];
                 multiply1x4by4x3Matrices(result, initialMatrix, controlMatrix);
-                splineCoordinates.push_back(result[0]);
-                splineCoordinates.push_back(result[1]);
-                splineCoordinates.push_back(result[2]);
+                glm::vec3 finalSplineCoor = glm::make_vec3(result);
+                splineCoordinates.push_back(finalSplineCoor);
 
                 splineColors.push_back(1.0);
                 splineColors.push_back(1.0);
                 splineColors.push_back(1.0);
                 splineColors.push_back(1.0);
-                
+
+                float initialTangentMatrix[4];
+                float tangentVector[4] = { 3 * pow(u, 2), 2 * u, 1, 0 };
+                multiply1x4by4x4Matrices(initialTangentMatrix, tangentVector, basisMatrix);
+
+                float tangent[3];
+                multiply1x4by4x3Matrices(tangent, initialTangentMatrix, controlMatrix);
+                glm::vec3 tan = glm::make_vec3(tangent);
+                tangentCoordinates.push_back(glm::normalize(tan));
+
+/*
                 float uNext = u + 0.001;
                 
                 float initialMatrixNext[4];
@@ -567,11 +584,33 @@ void loadVerticesSpline() {
                 splineColors.push_back(1.0);
                 splineColors.push_back(1.0);
                 splineColors.push_back(1.0);
-                
+                */
             }
         }
     }
     
+}
+
+//Using Sloan's method: https://viterbi-web.usc.edu/~jbarbic/cs420-s23/assign2/assign2_camera.html
+void loadNormalsAndBinormals() {
+    //Starting coordinates
+    //Arbitrary vector (typical y up vector) to start
+    glm::vec3 V = glm::vec3(0.0, 1.0, 0.0);
+    //N0 = unit(T0 x V)
+    glm::vec3 N = glm::normalize(glm::cross(tangentCoordinates[0], V));
+    //B0 = unit(T0 x N0)
+    glm::vec3 B = glm::normalize(glm::cross(tangentCoordinates[0], N));
+    normals.push_back(N);
+    binormals.push_back(B);
+
+    for (int i = 1; i < tangentCoordinates.size(); i++) {
+        //N1 = unit(B0 x T1)
+        N = glm::normalize(glm::cross(binormals[i - 1], tangentCoordinates[i]));
+        //B1 = unit(T1 x N1)
+        B = glm::normalize(glm::cross(tangentCoordinates[i], N));
+        normals.push_back(N);
+        binormals.push_back(B);
+    }
 }
 
 
@@ -590,6 +629,7 @@ void initScene(int argc, char *argv[])
   // Enable z-buffering (i.e., hidden surface removal using the z-buffer algorithm).
   glEnable(GL_DEPTH_TEST);
   loadVerticesSpline();
+  loadNormalsAndBinormals();
 
   // Create and bind the pipeline program. This operation must be performed BEFORE we initialize any VAOs.
   pipelineProgram = new BasicPipelineProgram;
@@ -623,7 +663,7 @@ void initScene(int argc, char *argv[])
   glGenBuffers(1, &splineVBO);
   glBindBuffer(GL_ARRAY_BUFFER, splineVBO);
   // First, allocate an empty VBO of the correct size to hold positions and colors.
-  int numBytesSplineCoordinates = sizeof(float) * splineCoordinates.size();
+  int numBytesSplineCoordinates = sizeof(glm::vec3) * splineCoordinates.size();
   int numBytesSplineColors = sizeof(float) * splineColors.size();
   glBufferData(GL_ARRAY_BUFFER, numBytesSplineCoordinates + numBytesSplineColors, nullptr, GL_STATIC_DRAW);
   // Next, write the position and color data into the VBO.

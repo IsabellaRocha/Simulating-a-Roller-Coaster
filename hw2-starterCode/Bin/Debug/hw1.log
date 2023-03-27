@@ -1,38 +1,37 @@
 ﻿  hw1.cpp
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(533,65): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(533,65): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(533,93): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(533,93): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(533,121): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(533,121): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(534,61): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(534,61): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(534,85): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(534,85): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(534,109): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(534,109): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(535,65): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(535,65): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(535,93): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(535,93): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(535,121): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(535,121): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(536,65): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(536,65): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(536,93): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(536,93): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(536,121): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(536,121): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(538,52): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(540,43): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(540,43): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(540,54): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(540,54): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(554,29): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(557,47): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(557,47): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(557,62): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(557,62): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(202,16): warning C4018: '<': signed/unsigned mismatch
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(541,65): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(541,65): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(541,93): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(541,93): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(541,121): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(541,121): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(542,61): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(542,61): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(542,85): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(542,85): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(542,109): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(542,109): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(543,65): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(543,65): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(543,93): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(543,93): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(543,121): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(543,121): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(544,65): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(544,65): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(544,93): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(544,93): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(544,121): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(544,121): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(546,52): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(548,43): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(548,43): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(548,54): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(548,54): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(562,46): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(562,46): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\imr84\OneDrive\Desktop\csci420\hw2-starterCode\hw2-starterCode\hw1.cpp(606,23): warning C4018: '<': signed/unsigned mismatch
   jpeg.lib(jerror.obj) : MSIL .netmodule or module compiled with /GL found; restarting link with /LTCG; add /LTCG to the link command line to improve linker performance
 LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification
 LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
