@@ -293,6 +293,7 @@ void idleFunc()
         else camPos = 0;
     }
     if (take1000Screenshots) {
+        // Take photos every 20 frames
         if (numScreenshots < 1000 && camPos % 20 == 0) {
             char filename[8] = "";
             if (numScreenshots < 10) {
@@ -447,8 +448,6 @@ void mouseButtonFunc(int button, int state, int x, int y)
 
 void keyboardFunc(unsigned char key, int x, int y)
 {
-    GLint mode = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "mode"); //Use to change between first mode for 1, 2, 3, and second mode for 4
-    GLint constant = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "constant");
     switch (key)
     {
     case 27: // ESC key
@@ -642,6 +641,7 @@ void loadVerticesSpline() {
                 tangentCoordinates.push_back(glm::normalize(tan));
             }
         }
+        //Connecting end to front
         float controlMatrix1[12] = { splines[i].points[splines[i].numControlPoints - 3].x, splines[i].points[splines[i].numControlPoints - 3].y, splines[i].points[splines[i].numControlPoints - 3].z,
                                     splines[i].points[splines[i].numControlPoints - 2].x, splines[i].points[splines[i].numControlPoints - 2].y, splines[i].points[splines[i].numControlPoints - 2].z,
                                     splines[i].points[splines[i].numControlPoints - 1].x, splines[i].points[splines[i].numControlPoints - 1].y, splines[i].points[splines[i].numControlPoints - 1].z,
