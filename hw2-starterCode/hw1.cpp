@@ -48,7 +48,6 @@ typedef enum { ROTATE, TRANSLATE, SCALE } CONTROL_STATE;
 CONTROL_STATE controlState = ROTATE;
 
 //For animation
-bool playAnimation = false;
 bool isMoving = true;
 int numScreenshots = 0;
 
@@ -96,17 +95,12 @@ GLuint groundTexture;
 
 vector<float> splineColors;
 vector<glm::vec3> splineCoordinates, tangentCoordinates, normals, binormals;
-vector<glm::vec3> railCoordinates;
+vector<glm::vec3> railCoordinates, railNormals;
 vector<glm::vec3> groundCoordinates;
 vector<glm::vec2> groundTextureCoordinates;
 vector<glm::vec4> railColors, groundColors;
 
 const float s = 0.5;
-//4x4 matrix, column major
-const float basisMatrixTranspose[16] = { -s, 2.0 * s, -s, 0.0,
-                                2.0 - s, s - 3.0, 0.0, 1.0,
-                                s - 2.0, 3.0 - 2.0 * s, s, 0.0,
-                                s, -s, 0.0, 0.0 };
 
 const float basisMatrix[16] = { -s, 2.0 - s, s - 2.0, s,
                                 2.0 * s, s - 3.0, 3.0 - 2.0 * s, -s,
@@ -123,11 +117,6 @@ BasicPipelineProgram* pipelineProgram;
 // Second pipeline program for texture floor
 TexturePipelineProgram* texturePipelineProgram;
 
-int imageHeight = 0;
-int imageWidth = 0;
-//Used for color correcting in smoothing mode to avoid white spikes
-int scaleConstant = 1;
-
 // Write a screenshot to the specified filename.
 void saveScreenshot(const char* filename)
 {
@@ -141,6 +130,52 @@ void saveScreenshot(const char* filename)
     else cout << "Failed to save file " << filename << '.' << endl;
 
     delete[] screenshotData;
+}
+
+/*MULTIPLY MATRICES HELPERS*/
+//Used to multiply u vector by basis matrix in loadSplineVertices()
+void multiply1x4by4x4Matrices(float* result, const float* matrix1, const float* matrix2)
+{
+    // Perform the multiplication of matrix1 and matrix2
+    float x = 0, y = 0, z = 0, w = 0;
+    for (int col = 0; col < 4; col++) {
+        float m1 = matrix1[col];
+        x += m1 * matrix2[col * 4 + 0];
+        y += m1 * matrix2[col * 4 + 1];
+        z += m1 * matrix2[col * 4 + 2];
+        w += m1 * matrix2[col * 4 + 3];
+    }
+    result[0] = x;
+    result[1] = y;
+    result[2] = z;
+    result[3] = w;
+}
+
+//Used to multiply result of u vector and basis matrix by control matrix in loadSplineVertices()
+void multiply1x4by4x3Matrices(float* result, const float* matrix1, const float* matrix2)
+{
+    float x = 0, y = 0, z = 0;
+    for (int row = 0; row < 4; row++) {
+        float m1 = matrix1[row];
+        x += m1 * matrix2[row * 3 + 0];
+        y += m1 * matrix2[row * 3 + 1];
+        z += m1 * matrix2[row * 3 + 2];
+    }
+    result[0] = x;
+    result[1] = y;
+    result[2] = z;
+}
+
+//Used in displayfunc for calculating viewLightDirection
+void multiply4x4by4x1Matrices(float* result, const float* matrix1, const float* matrix2)
+{
+    // Perform the multiplication of matrix1 and matrix2
+    for (int i = 0; i < 4; i++) {
+        result[i] = matrix1[i * 4 + 0] * matrix2[0] +
+            matrix1[i * 4 + 1] * matrix2[1] +
+            matrix1[i * 4 + 2] * matrix2[2] +
+            matrix1[i * 4 + 3] * matrix2[3];
+    }
 }
 
 void displayFunc()
@@ -157,12 +192,6 @@ void displayFunc()
         splineCoordinates[camPos].x + tangentCoordinates[camPos].x, splineCoordinates[camPos].y + tangentCoordinates[camPos].y, splineCoordinates[camPos].z + tangentCoordinates[camPos].z,
         normals[camPos].x, normals[camPos].y, normals[camPos].z);
 
-    matrix.Rotate(terrainRotate[0], 1.0, 0.0, 0.0);
-    matrix.Rotate(terrainRotate[1], 0.0, 1.0, 0.0);
-    matrix.Rotate(terrainRotate[2], 0.0, 0.0, 1.0);
-    matrix.Translate(terrainTranslate[0], terrainTranslate[1], terrainTranslate[2]);
-    matrix.Scale(terrainScale[0], terrainScale[1], terrainScale[2]);
-
     // Read the current modelview and projection matrices.
     float modelViewMatrix[16];
     matrix.SetMatrixMode(OpenGLMatrix::ModelView);
@@ -172,6 +201,7 @@ void displayFunc()
     matrix.SetMatrixMode(OpenGLMatrix::Projection);
     matrix.GetMatrix(projectionMatrix);
 
+    
     // Bind the pipeline program.
     // If an incorrect pipeline program is bound, then the modelview and projection matrices
     // will be sent to the wrong pipeline program, causing shader
@@ -193,6 +223,55 @@ void displayFunc()
 
 
     pipelineProgram->Bind();
+    /*PHONG LIGHTING*/
+    //Handle to viewLightDirection shader variable
+    GLint h_viewLightDirection = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "viewLightDirection");
+    //Direction towards light
+    float homogenousLightDirection[4] = { 0, 1, 0, 0 };
+    vector<float> viewLightDirection;
+    float result[4];
+    multiply4x4by4x1Matrices(result, modelViewMatrix, homogenousLightDirection);
+    viewLightDirection.push_back(result[0]);
+    viewLightDirection.push_back(result[1]);
+    viewLightDirection.push_back(result[2]);
+    //Upload viewLightDirection to the GPU
+    glUniform3fv(h_viewLightDirection, 1, &viewLightDirection[0]);
+    //Phong Constants
+    float La[4] = { 0.5f, 0.5f, 0.5f, 0.0f };
+    float ka[4] = { 0.3f, 0.3f, 0.3f, 0.0f };
+    GLint h_La = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "La");
+    glUniform4fv(h_La, 1, La);
+    GLint h_ka = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "ka");
+    glUniform4fv(h_ka, 1, ka);
+
+    float Ld[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
+    float kd[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
+    GLint h_Ld = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "Ld");
+    glUniform4fv(h_Ld, 1, Ld);
+    GLint h_kd = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "kd");
+    glUniform4fv(h_kd, 1, kd);
+
+    float Ls[4] = { 0.4f, 0.4f, 0.4f, 0.0f };
+    float ks[4] = { 0.2f, 0.2f, 0.2f, 0.0f };
+    GLint h_Ls = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "Ls");
+    glUniform4fv(h_Ls, 1, Ls);
+    GLint h_ks = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "ks");
+    glUniform4fv(h_ks, 1, ks);
+
+    GLint h_alpha = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "alpha");
+    glUniform1f(h_alpha, 0.9f);
+
+
+    /*UPLOADING NORMAL MATRIX*/
+    GLint h_normalMatrix = glGetUniformLocation(pipelineProgram->GetProgramHandle(), "normalMatrix");
+
+    float n[16];
+    matrix.SetMatrixMode(OpenGLMatrix::ModelView);
+    matrix.GetNormalMatrix(n);
+    // upload n to the GPU
+    GLboolean isRowMajor = GL_FALSE;
+    glUniformMatrix4fv(h_normalMatrix, 1, isRowMajor, n);
+
     glBindVertexArray(railVAO);
     glDrawArrays(GL_TRIANGLES, 0, railCoordinates.size());
 
@@ -212,13 +291,6 @@ void idleFunc()
         if (camPos < splineCoordinates.size() - 1) camPos++;
         else camPos = 0;
     }
-
-    // Do some stuff...
-
-    // For example, here, you can save the screenshots to disk (to make the animation).
-
-    // Send the signal that we should call displayFunc.
-
 
     glutPostRedisplay();
 }
@@ -367,11 +439,7 @@ void keyboardFunc(unsigned char key, int x, int y)
         saveScreenshot("screenshot.jpg");
         break;
 
-    case 'a':
-        playAnimation = true;
-        break;
-
-    case 's':
+    case 'm':
         isMoving = !isMoving;
         break;
     }
@@ -512,40 +580,6 @@ int initTexture(const char* imageFilename, GLuint textureHandle)
     return 0;
 }
 
-//Used to multiply u vector by basis matrix
-void multiply1x4by4x4Matrices(float* result, const float* matrix1, const float* matrix2)
-{
-    // Perform the multiplication of matrix1 and matrix2
-    float x = 0, y = 0, z = 0, w = 0;
-    for (int col = 0; col < 4; col++) {
-        float m1 = matrix1[col];
-        x += m1 * matrix2[col * 4 + 0];
-        y += m1 * matrix2[col * 4 + 1];
-        z += m1 * matrix2[col * 4 + 2];
-        w += m1 * matrix2[col * 4 + 3];
-    }
-    result[0] = x;
-    result[1] = y;
-    result[2] = z;
-    result[3] = w;
-}
-
-//Used to multiply result of u vector and basis matrix by control matrix
-void multiply1x4by4x3Matrices(float* result, const float* matrix1, const float* matrix2)
-{
-    float x = 0, y = 0, z = 0;
-    for (int row = 0; row < 4; row++) {
-        float m1 = matrix1[row];
-        x += m1 * matrix2[row * 3 + 0];
-        y += m1 * matrix2[row * 3 + 1];
-        z += m1 * matrix2[row * 3 + 2];
-    }
-    result[0] = x;
-    result[1] = y;
-    result[2] = z;
-}
-
-
 
 void loadVerticesSpline() {
 
@@ -558,7 +592,7 @@ void loadVerticesSpline() {
                                         splines[i].points[j + 1].x, splines[i].points[j + 1].y, splines[i].points[j + 1].z,
                                         splines[i].points[j + 2].x, splines[i].points[j + 2].y, splines[i].points[j + 2].z };
 
-            for (float u = 0.0; u < 1.0; u += 0.001) {
+            for (float u = 0.0; u <= 1.0; u += 0.001) {
                 float initialMatrix[4];
                 float rowVector[4] = { pow(u, 3), pow(u, 2), u, 1 };
                 multiply1x4by4x4Matrices(initialMatrix, rowVector, basisMatrix);
@@ -567,12 +601,12 @@ void loadVerticesSpline() {
                 multiply1x4by4x3Matrices(result, initialMatrix, controlMatrix);
                 glm::vec3 finalSplineCoor = glm::make_vec3(result);
                 splineCoordinates.push_back(finalSplineCoor);
-
+                /*
                 splineColors.push_back(1.0);
                 splineColors.push_back(1.0);
                 splineColors.push_back(1.0);
                 splineColors.push_back(1.0);
-
+                */
                 float initialTangentMatrix[4];
                 float tangentVector[4] = { 3 * pow(u, 2), 2 * u, 1, 0 };
                 multiply1x4by4x4Matrices(initialTangentMatrix, tangentVector, basisMatrix);
@@ -613,6 +647,8 @@ void loadNormalsAndBinormals() {
 }
 
 //Makes rail into continuous rectangle not just a line
+//triangleColor used in level 3 to make it rainbow, no longer used now
+//triangleNormal now used for Phong lighting
 void loadRailCoordinates() {
     for (int i = 0; i < splineCoordinates.size() - 1; i++) {
         glm::vec3 currCoor = splineCoordinates[i];
@@ -643,10 +679,12 @@ void loadRailCoordinates() {
         float triangleColorArray[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
         glm::vec4 triangleColor = glm::make_vec4(triangleColorArray);
         railCoordinates.push_back(v0);
-        railColors.push_back(triangleColor);
+        railNormals.push_back(triangleNormal);
         railCoordinates.push_back(v1);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v2);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
 
         a = v3 - v2;
@@ -655,10 +693,13 @@ void loadRailCoordinates() {
         float triangleColorArray1[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
         triangleColor = glm::make_vec4(triangleColorArray1);
         railCoordinates.push_back(v2);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v3);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v0);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
 
         //Second face
@@ -668,10 +709,13 @@ void loadRailCoordinates() {
         float triangleColorArray2[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
         triangleColor = glm::make_vec4(triangleColorArray2);
         railCoordinates.push_back(v4);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v5);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v6);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
 
         a = v7 - v6;
@@ -680,10 +724,13 @@ void loadRailCoordinates() {
         float triangleColorArray3[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
         triangleColor = glm::make_vec4(triangleColorArray3);
         railCoordinates.push_back(v6);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v7);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v4);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
 
         //Connect faces on left side
@@ -693,10 +740,13 @@ void loadRailCoordinates() {
         float triangleColorArray4[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
         triangleColor = glm::make_vec4(triangleColorArray4);
         railCoordinates.push_back(v7);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v6);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v2);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
 
         a = v3 - v2;
@@ -705,10 +755,13 @@ void loadRailCoordinates() {
         float triangleColorArray5[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
         triangleColor = glm::make_vec4(triangleColorArray5);
         railCoordinates.push_back(v2);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v3);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v7);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
 
         //Connect faces on right side
@@ -718,10 +771,13 @@ void loadRailCoordinates() {
         float triangleColorArray6[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
         triangleColor = glm::make_vec4(triangleColorArray6);
         railCoordinates.push_back(v4);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v5);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v1);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
 
         a = v0 - v1;
@@ -730,10 +786,75 @@ void loadRailCoordinates() {
         float triangleColorArray7[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
         triangleColor = glm::make_vec4(triangleColorArray7);
         railCoordinates.push_back(v1);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v0);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
         railCoordinates.push_back(v4);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+
+        //Connect faces on top
+        a = v5 - v1;
+        b = v6 - v1;
+        triangleNormal = glm::normalize(glm::cross(a, b));
+        float triangleColorArray8[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
+        triangleColor = glm::make_vec4(triangleColorArray8);
+        railCoordinates.push_back(v1);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+        railCoordinates.push_back(v5);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+        railCoordinates.push_back(v6);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+
+        a = v2 - v6;
+        b = v1 - v6;
+        triangleNormal = glm::normalize(glm::cross(a, b));
+        float triangleColorArray9[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
+        triangleColor = glm::make_vec4(triangleColorArray9);
+        railCoordinates.push_back(v6);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+        railCoordinates.push_back(v2);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+        railCoordinates.push_back(v1);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+
+        //Connect faces on bottom
+        a = v4 - v0;
+        b = v7 - v0;
+        triangleNormal = glm::normalize(glm::cross(a, b));
+        float triangleColorArray10[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
+        triangleColor = glm::make_vec4(triangleColorArray10);
+        railCoordinates.push_back(v0);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+        railCoordinates.push_back(v4);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+        railCoordinates.push_back(v7);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+
+        a = v3 - v7;
+        b = v0 - v7;
+        triangleNormal = glm::normalize(glm::cross(a, b));
+        float triangleColorArray11[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
+        triangleColor = glm::make_vec4(triangleColorArray11);
+        railCoordinates.push_back(v7);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+        railCoordinates.push_back(v3);
+        railNormals.push_back(triangleNormal);
+        railColors.push_back(triangleColor);
+        railCoordinates.push_back(v0);
+        railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
     }
 }
@@ -753,7 +874,6 @@ void loadGroundCoordinates() {
     groundTextureCoordinates.push_back(glm::vec2(0, 1));
     groundTextureCoordinates.push_back(glm::vec2(0, 0));
 }
-
 
 void initScene(int argc, char* argv[])
 {
@@ -779,7 +899,7 @@ void initScene(int argc, char* argv[])
 
     const int stride = 0; // Stride is 0, i.e., data is tightly packed in the VBO.
     const GLboolean normalized = GL_FALSE; // Normalization is off.
-    const GLuint locationOfColor = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "color"); // Obtain a handle to the shader variable "color".
+    const GLuint locationOfNormal = glGetAttribLocation(pipelineProgram->GetProgramHandle(), "normal"); // Obtain a handle to the shader variable "normal".
 
     /*RAIL VBOS AND VAOS*/
     // Create the VBOs. There is a single VBO in this example. This operation must be performed BEFORE we initialize any VAOs.
@@ -787,11 +907,11 @@ void initScene(int argc, char* argv[])
     glBindBuffer(GL_ARRAY_BUFFER, railVBO);
     // First, allocate an empty VBO of the correct size to hold positions and colors.
     int numBytesRailCoordinates = sizeof(glm::vec3) * railCoordinates.size();
-    int numBytesRailColors = sizeof(glm::vec4) * railColors.size();
-    glBufferData(GL_ARRAY_BUFFER, numBytesRailCoordinates + numBytesRailColors, nullptr, GL_STATIC_DRAW);
+    int numBytesNormals = sizeof(glm::vec3) * railNormals.size();
+    glBufferData(GL_ARRAY_BUFFER, numBytesRailCoordinates + numBytesNormals, nullptr, GL_STATIC_DRAW);
     // Next, write the position and color data into the VBO.
-    glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesRailCoordinates, (float*)railCoordinates.data());
-    glBufferSubData(GL_ARRAY_BUFFER, numBytesRailCoordinates, numBytesRailColors, (float*)railColors.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesRailCoordinates, &railCoordinates[0]);
+    glBufferSubData(GL_ARRAY_BUFFER, numBytesRailCoordinates, numBytesNormals, &railNormals[0]);
     // Create the VAOs. There is a single VAO in this example.
     glGenVertexArrays(1, &railVAO);
     glBindVertexArray(railVAO);
@@ -801,9 +921,9 @@ void initScene(int argc, char* argv[])
     glEnableVertexAttribArray(locationOfPosition); // Must always enable the vertex attribute. By default, it is disabled.
     glVertexAttribPointer(locationOfPosition, 3, GL_FLOAT, normalized, stride, (const void*)0); // The shader variable "position" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset 0 in the VBO. There are 3 float entries per vertex in the VBO (i.e., x,y,z coordinates).
 
-    // Set up the relationship between the "color" shader variable and the VAO.
-    glEnableVertexAttribArray(locationOfColor); // Must always enable the vertex attribute. By default, it is disabled.
-    glVertexAttribPointer(locationOfColor, 4, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesRailCoordinates); // The shader variable "color" receives its data from the currently bound VBO (i.e., vertexPositionAndColorVBO), starting from offset "numBytesInPositions" in the VBO. There are 4 float entries per vertex in the VBO (i.e., r,g,b,a channels).
+    // Set up the relationship between the "normal" shader variable and the VAO.
+    glEnableVertexAttribArray(locationOfNormal); // Must always enable the vertex attribute. By default, it is disabled.
+    glVertexAttribPointer(locationOfNormal, 3, GL_FLOAT, normalized, stride, (const void*)(unsigned long)numBytesRailCoordinates); // The shader variable "normal" receives its data from the currently bound VBO 
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -828,8 +948,8 @@ void initScene(int argc, char* argv[])
     int numBytesGroundTextureCoordinates = sizeof(glm::vec2) * groundTextureCoordinates.size();
     glBufferData(GL_ARRAY_BUFFER, numBytesGroundCoordinates + numBytesGroundTextureCoordinates, nullptr, GL_STATIC_DRAW);
     // Next, write the position and color data into the VBO.
-    glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesGroundCoordinates, (float*)groundCoordinates.data());
-    glBufferSubData(GL_ARRAY_BUFFER, numBytesGroundCoordinates, numBytesGroundTextureCoordinates, (float*)groundTextureCoordinates.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 0, numBytesGroundCoordinates, &groundCoordinates[0]);
+    glBufferSubData(GL_ARRAY_BUFFER, numBytesGroundCoordinates, numBytesGroundTextureCoordinates, &groundTextureCoordinates[0]);
     // Create the VAOs. There is a single VAO in this example.
     glGenVertexArrays(1, &groundVAO);
     glBindVertexArray(groundVAO);
@@ -930,7 +1050,7 @@ int main(int argc, char* argv[])
 
     glGenTextures(1, &groundTexture);
 
-    initTexture("grounds/nadia.jpg", groundTexture);
+    initTexture("grounds/snow.jpg", groundTexture);
 
     // Sink forever into the GLUT loop.
     glutMainLoop();

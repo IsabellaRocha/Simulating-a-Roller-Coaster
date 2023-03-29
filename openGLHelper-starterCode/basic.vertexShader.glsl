@@ -1,27 +1,23 @@
 #version 150
 
 in vec3 position;
-in vec4 color;
-out vec4 col;
+in vec3 normal;
 
-uniform int mode;
-uniform int constant;
-in vec3 upCoors;
-in vec3 downCoors;
-in vec3 rightCoors;
-in vec3 leftCoors;
+out vec3 viewPosition;
+out vec3 viewNormal;
 
 uniform mat4 modelViewMatrix;
+uniform mat4 normalMatrix;
 uniform mat4 projectionMatrix;
 
 void main()
 {
+		// view-space position of the vertex
+		vec4 viewPosition4 = modelViewMatrix * vec4(position, 1.0f);
+		viewPosition = viewPosition4.xyz;
 
 		// compute the transformed and projected vertex position (into gl_Position) 
-		// compute the vertex color (into col)
-		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0f);
-		col = color;
-	
-  
+		gl_Position = projectionMatrix * viewPosition4;
+		viewNormal = normalize((normalMatrix*vec4(normal, 0.0f)).xyz);
 }
 
