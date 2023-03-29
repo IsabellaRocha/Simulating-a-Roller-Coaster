@@ -1,4 +1,4 @@
-# Assignment 1: Simulating a Roller Coaster
+# Assignment 2: Simulating a Roller Coaster
 ### Background of system used
 This assignment was written on a Windows device using Visual Studio 2019. To change the command line input, the debugger under properties was used and then to run the Local Windows Debugger was used.
 
