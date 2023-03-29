@@ -15,6 +15,7 @@
     <ClCompile Include="..\openGLHelper-starterCode\basicPipelineProgram.cpp" />
     <ClCompile Include="..\openGLHelper-starterCode\openGLMatrix.cpp" />
     <ClCompile Include="..\openGLHelper-starterCode\pipelineProgram.cpp" />
+    <ClCompile Include="..\openGLHelper-starterCode\texturePipelineProgram.cpp" />
     <ClCompile Include="hw1.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -25,10 +26,13 @@
     <ClInclude Include="..\openGLHelper-starterCode\openGLHeader.h" />
     <ClInclude Include="..\openGLHelper-starterCode\openGLMatrix.h" />
     <ClInclude Include="..\openGLHelper-starterCode\pipelineProgram.h" />
+    <ClInclude Include="..\openGLHelper-starterCode\texturePipelineProgram.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\openGLHelper-starterCode\basic.fragmentShader.glsl" />
     <None Include="..\openGLHelper-starterCode\basic.vertexShader.glsl" />
+    <None Include="..\openGLHelper-starterCode\texture.fragmentShader.glsl" />
+    <None Include="..\openGLHelper-starterCode\texture.vertexShader.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{15913627-D497-4AA0-BD7E-734F0D40F7C9}</ProjectGuid>
