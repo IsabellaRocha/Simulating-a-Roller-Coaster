@@ -7,7 +7,7 @@ This assignment was written on a Windows device using Visual Studio 2019. To cha
 - A rectangle is rendered for the track based off the points normal and binormal
 - The camera follows along the spline to simulate first person view
 - A 512x512 ground is rendered along z = -300
-- The ground is
+- The ground uses texture mapping from a texture image, specified as input to the initTexture() function
 - Click 'x': Takes a screenshot
 - Click 'm': Stops and starts motion along the rollercoaster
 - Click 's': Take a screenshot every time the camera moves 20 units, significantly slows down movement along the rollercoaster
