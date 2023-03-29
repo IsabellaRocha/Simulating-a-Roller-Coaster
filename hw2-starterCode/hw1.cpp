@@ -50,6 +50,7 @@ CONTROL_STATE controlState = ROTATE;
 //For animation
 bool isMoving = true;
 int numScreenshots = 0;
+bool take1000Screenshots = false;
 
 // Transformations of the terrain.
 float terrainRotate[3] = { 0.0f, 0.0f, 0.0f };
@@ -62,7 +63,7 @@ float terrainScale[3] = { 1.0f, 1.0f, 1.0f };
 // Width and height of the OpenGL window, in pixels.
 int windowWidth = 1280;
 int windowHeight = 720;
-char windowTitle[512] = "CSCI 420 homework I";
+char windowTitle[512] = "CSCI 420 homework II";
 
 // Stores the image loaded from disk.
 //ImageIO * heightmapImage;
@@ -291,6 +292,30 @@ void idleFunc()
         if (camPos < splineCoordinates.size() - 1) camPos++;
         else camPos = 0;
     }
+    if (take1000Screenshots) {
+        if (numScreenshots < 1000 && camPos % 20 == 0) {
+            char filename[8] = "";
+            if (numScreenshots < 10) {
+                strcat(filename, "00");
+                strcat(filename, to_string(numScreenshots).c_str());
+                strcat(filename, ".jpg");
+            }
+            else if (numScreenshots < 100) {
+                strcat(filename, "0");
+                strcat(filename, to_string(numScreenshots).c_str());
+                strcat(filename, ".jpg");
+            }
+            else {
+                strcat(filename, to_string(numScreenshots).c_str());
+                strcat(filename, ".jpg");
+            }
+            saveScreenshot(filename);
+            numScreenshots++;
+        }
+        if (numScreenshots >= 1000) {
+            take1000Screenshots = false;
+        }
+    }
 
     glutPostRedisplay();
 }
@@ -442,6 +467,11 @@ void keyboardFunc(unsigned char key, int x, int y)
     case 'm':
         isMoving = !isMoving;
         break;
+
+    case 's':
+        take1000Screenshots = !take1000Screenshots;
+        cout << take1000Screenshots << endl;
+        break;
     }
 }
 
@@ -584,7 +614,7 @@ int initTexture(const char* imageFilename, GLuint textureHandle)
 void loadVerticesSpline() {
 
     for (int i = 0; i < numSplines; i++) {
-        //Control matrix takes four points, hence -3
+        //control matrix
         for (int j = 1; j < splines[i].numControlPoints - 2; j++) {
             //control matrix
             float controlMatrix[12] = { splines[i].points[j - 1].x, splines[i].points[j - 1].y, splines[i].points[j - 1].z,
@@ -601,12 +631,7 @@ void loadVerticesSpline() {
                 multiply1x4by4x3Matrices(result, initialMatrix, controlMatrix);
                 glm::vec3 finalSplineCoor = glm::make_vec3(result);
                 splineCoordinates.push_back(finalSplineCoor);
-                /*
-                splineColors.push_back(1.0);
-                splineColors.push_back(1.0);
-                splineColors.push_back(1.0);
-                splineColors.push_back(1.0);
-                */
+                
                 float initialTangentMatrix[4];
                 float tangentVector[4] = { 3 * pow(u, 2), 2 * u, 1, 0 };
                 multiply1x4by4x4Matrices(initialTangentMatrix, tangentVector, basisMatrix);
@@ -616,6 +641,78 @@ void loadVerticesSpline() {
                 glm::vec3 tan = glm::make_vec3(tangent);
                 tangentCoordinates.push_back(glm::normalize(tan));
             }
+        }
+        float controlMatrix1[12] = { splines[i].points[splines[i].numControlPoints - 3].x, splines[i].points[splines[i].numControlPoints - 3].y, splines[i].points[splines[i].numControlPoints - 3].z,
+                                    splines[i].points[splines[i].numControlPoints - 2].x, splines[i].points[splines[i].numControlPoints - 2].y, splines[i].points[splines[i].numControlPoints - 2].z,
+                                    splines[i].points[splines[i].numControlPoints - 1].x, splines[i].points[splines[i].numControlPoints - 1].y, splines[i].points[splines[i].numControlPoints - 1].z,
+                                    splines[i].points[0].x, splines[i].points[0].y, splines[i].points[0].z };
+
+        for (float u = 0.0; u <= 1.0; u += 0.001) {
+            float initialMatrix[4];
+            float rowVector[4] = { pow(u, 3), pow(u, 2), u, 1 };
+            multiply1x4by4x4Matrices(initialMatrix, rowVector, basisMatrix);
+
+            float result[3];
+            multiply1x4by4x3Matrices(result, initialMatrix, controlMatrix1);
+            glm::vec3 finalSplineCoor = glm::make_vec3(result);
+            splineCoordinates.push_back(finalSplineCoor);
+
+            float initialTangentMatrix[4];
+            float tangentVector[4] = { 3 * pow(u, 2), 2 * u, 1, 0 };
+            multiply1x4by4x4Matrices(initialTangentMatrix, tangentVector, basisMatrix);
+
+            float tangent[3];
+            multiply1x4by4x3Matrices(tangent, initialTangentMatrix, controlMatrix1);
+            glm::vec3 tan = glm::make_vec3(tangent);
+            tangentCoordinates.push_back(glm::normalize(tan));
+        }
+        float controlMatrix2[12] = { splines[i].points[splines[i].numControlPoints - 2].x, splines[i].points[splines[i].numControlPoints - 2].y, splines[i].points[splines[i].numControlPoints - 2].z,
+                                    splines[i].points[splines[i].numControlPoints - 1].x, splines[i].points[splines[i].numControlPoints - 1].y, splines[i].points[splines[i].numControlPoints - 1].z,
+                                    splines[i].points[0].x, splines[i].points[0].y, splines[i].points[0].z,
+                                    splines[i].points[1].x, splines[i].points[1].y, splines[i].points[1].z };
+
+        for (float u = 0.0; u <= 1.0; u += 0.001) {
+            float initialMatrix[4];
+            float rowVector[4] = { pow(u, 3), pow(u, 2), u, 1 };
+            multiply1x4by4x4Matrices(initialMatrix, rowVector, basisMatrix);
+
+            float result[3];
+            multiply1x4by4x3Matrices(result, initialMatrix, controlMatrix2);
+            glm::vec3 finalSplineCoor = glm::make_vec3(result);
+            splineCoordinates.push_back(finalSplineCoor);
+
+            float initialTangentMatrix[4];
+            float tangentVector[4] = { 3 * pow(u, 2), 2 * u, 1, 0 };
+            multiply1x4by4x4Matrices(initialTangentMatrix, tangentVector, basisMatrix);
+
+            float tangent[3];
+            multiply1x4by4x3Matrices(tangent, initialTangentMatrix, controlMatrix2);
+            glm::vec3 tan = glm::make_vec3(tangent);
+            tangentCoordinates.push_back(glm::normalize(tan));
+        }
+        float controlMatrix3[12] = { splines[i].points[splines[i].numControlPoints - 1].x, splines[i].points[splines[i].numControlPoints - 1].y, splines[i].points[splines[i].numControlPoints - 1].z,
+                                    splines[i].points[0].x, splines[i].points[0].y, splines[i].points[0].z,
+                                    splines[i].points[1].x, splines[i].points[1].y, splines[i].points[1].z,
+                                    splines[i].points[2].x, splines[i].points[2].y, splines[i].points[2].z };
+
+        for (float u = 0.0; u <= 1.0; u += 0.001) {
+            float initialMatrix[4];
+            float rowVector[4] = { pow(u, 3), pow(u, 2), u, 1 };
+            multiply1x4by4x4Matrices(initialMatrix, rowVector, basisMatrix);
+
+            float result[3];
+            multiply1x4by4x3Matrices(result, initialMatrix, controlMatrix3);
+            glm::vec3 finalSplineCoor = glm::make_vec3(result);
+            splineCoordinates.push_back(finalSplineCoor);
+
+            float initialTangentMatrix[4];
+            float tangentVector[4] = { 3 * pow(u, 2), 2 * u, 1, 0 };
+            multiply1x4by4x4Matrices(initialTangentMatrix, tangentVector, basisMatrix);
+
+            float tangent[3];
+            multiply1x4by4x3Matrices(tangent, initialTangentMatrix, controlMatrix3);
+            glm::vec3 tan = glm::make_vec3(tangent);
+            tangentCoordinates.push_back(glm::normalize(tan));
         }
     }
 }
@@ -671,74 +768,13 @@ void loadRailCoordinates() {
         glm::vec3 v6 = nextCoor + 0.1f * (nextNormal - nextBinormal);
         glm::vec3 v7 = nextCoor + 0.1f * (-nextNormal - nextBinormal);
 
-        //First face
-        //Calculate triangle normal for color (lvl 3)
-        glm::vec3 a = v1 - v0;
-        glm::vec3 b = v2 - v0;
-        glm::vec3 triangleNormal = glm::normalize(glm::cross(a, b));
-        float triangleColorArray[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
-        glm::vec4 triangleColor = glm::make_vec4(triangleColorArray);
-        railCoordinates.push_back(v0);
-        railNormals.push_back(triangleNormal);
-        railCoordinates.push_back(v1);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-        railCoordinates.push_back(v2);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-
-        a = v3 - v2;
-        b = v0 - v2;
-        triangleNormal = glm::normalize(glm::cross(a, b));
-        float triangleColorArray1[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
-        triangleColor = glm::make_vec4(triangleColorArray1);
-        railCoordinates.push_back(v2);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-        railCoordinates.push_back(v3);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-        railCoordinates.push_back(v0);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-
-        //Second face
-        a = v5 - v4;
-        b = v6 - v4;
-        triangleNormal = glm::normalize(glm::cross(a, b));
-        float triangleColorArray2[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
-        triangleColor = glm::make_vec4(triangleColorArray2);
-        railCoordinates.push_back(v4);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-        railCoordinates.push_back(v5);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-        railCoordinates.push_back(v6);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-
-        a = v7 - v6;
-        b = v4 - v6;
-        triangleNormal = glm::normalize(glm::cross(a, b));
-        float triangleColorArray3[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
-        triangleColor = glm::make_vec4(triangleColorArray3);
-        railCoordinates.push_back(v6);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-        railCoordinates.push_back(v7);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-        railCoordinates.push_back(v4);
-        railNormals.push_back(triangleNormal);
-        railColors.push_back(triangleColor);
-
+        
         //Connect faces on left side
-        a = v6 - v7;
-        b = v2 - v7;
-        triangleNormal = glm::normalize(glm::cross(a, b));
+        glm::vec3 a = v6 - v7;
+        glm::vec3 b = v2 - v7;
+        glm::vec3 triangleNormal = glm::normalize(glm::cross(a, b));
         float triangleColorArray4[4] = { triangleNormal.x, triangleNormal.y, triangleNormal.z, 1 };
-        triangleColor = glm::make_vec4(triangleColorArray4);
+        glm::vec4 triangleColor = glm::make_vec4(triangleColorArray4);
         railCoordinates.push_back(v7);
         railNormals.push_back(triangleNormal);
         railColors.push_back(triangleColor);
